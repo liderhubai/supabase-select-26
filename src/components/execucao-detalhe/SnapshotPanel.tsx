@@ -94,7 +94,7 @@ export function SnapshotPanel({ rating, onRate }: { rating: Rating; onRate: (r: 
 
       <div className="flex w-full shrink-0 flex-col gap-[12px] border-t border-border bg-surface-raised px-[20px] py-[16px]">
         <div className="flex w-full items-center gap-[10px]">
-          <span className="flex-1 text-[14px] font-medium text-foreground">Essa resposta foi boa?</span>
+          <span className="min-w-0 flex-1 text-[14px] font-medium text-foreground">Essa resposta foi boa?</span>
           <RatingButtons value={rating} onSelect={onRate} />
         </div>
       </div>

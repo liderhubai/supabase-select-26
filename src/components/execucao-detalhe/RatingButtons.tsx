@@ -12,7 +12,7 @@ export function RatingButtons({ value, onSelect }: { value: Rating; onSelect: (r
         onClick={() => onSelect('boa')}
         aria-pressed={value === 'boa'}
         className={cn(
-          'flex h-[32px] shrink-0 items-center gap-[6px] rounded-full border px-[12px] transition-colors',
+          'flex h-[32px] shrink-0 items-center whitespace-nowrap gap-[6px] rounded-full border px-[12px] transition-colors',
           value === 'boa'
             ? 'border-success bg-success-soft text-success'
             : 'border-border-strong text-muted-foreground hover:bg-surface',
@@ -26,7 +26,7 @@ export function RatingButtons({ value, onSelect }: { value: Rating; onSelect: (r
         onClick={() => onSelect('ruim')}
         aria-pressed={value === 'ruim'}
         className={cn(
-          'flex h-[32px] shrink-0 items-center gap-[6px] rounded-full border px-[12px] transition-colors',
+          'flex h-[32px] shrink-0 items-center whitespace-nowrap gap-[6px] rounded-full border px-[12px] transition-colors',
           value === 'ruim'
             ? 'border-error bg-error-soft text-error'
             : 'border-border-strong text-muted-foreground hover:bg-surface',

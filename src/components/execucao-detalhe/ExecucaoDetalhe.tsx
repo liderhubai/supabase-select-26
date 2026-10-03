@@ -48,13 +48,13 @@ export function ExecucaoDetalhe() {
               {execucao.meta.map(({ icon: Icon, text }) => (
                 <div key={text} className="flex items-center gap-[6px]">
                   <Icon size={13} className="text-subtle-foreground" />
-                  <span className="font-mono text-[12px] text-muted-foreground">{text}</span>
+                  <span className="font-mono text-[12px] whitespace-nowrap text-muted-foreground">{text}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="flex items-center gap-[10px]">
+          <div className="flex shrink-0 items-center gap-[10px]">
             <button
               type="button"
               aria-label="Anterior"
@@ -74,7 +74,7 @@ export function ExecucaoDetalhe() {
               className="flex h-[36px] items-center justify-center gap-[6px] rounded-full border border-border-strong bg-background px-[16px] hover:bg-surface"
             >
               <MessageCircle size={16} className="text-foreground" />
-              <span className="text-[14px] leading-[1.43] font-medium text-foreground">Abrir no chat</span>
+              <span className="text-[14px] leading-[1.43] font-medium whitespace-nowrap text-foreground">Abrir no chat</span>
             </button>
           </div>
         </div>
