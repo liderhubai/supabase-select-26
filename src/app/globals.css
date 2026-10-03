@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
 /* Tokens do design system itera.ai — valores exatos das variáveis do untitled.pen */
