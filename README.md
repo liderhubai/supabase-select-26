@@ -1,51 +1,70 @@
-# Agent Studio
+# Itera AI
 
-Simulador de atendimento com agentes de IA (Claude via Vercel AI SDK), observabilidade completa
-(conversas, mensagens e traces de cada chamada), feedback de revisores e uma fila de **auto-melhoria**
-que reescreve o prompt com justificativas, roda uma bateria de testes simulados e só promove para
-produção depois da sua revisão (diff + motivos + notas baseline × candidata).
+Built for the **Supabase Select 26 hackathon**.
 
-```
-src/app/            Next.js App Router (páginas + API routes)
-  api/chat          streaming do atendimento + grava mensagens/traces
-  api/optimize      reflexão estilo GEPA sobre os feedbacks → versão em staging + bateria
-  api/test-runs     roda a bateria de testes de uma versão sob demanda
-src/lib/server/     lógica de IA e acesso ao banco com service role (só servidor)
-src/views/          telas (client components)
-supabase/           migrations e seed (Supabase é usado só como Postgres + Realtime)
-```
+AI customer-service agents are hard to improve. Teams don't know where the agent fails, feedback gets lost, and prompt changes go live without testing.
 
-## Fluxo
+**Itera AI** turns human feedback into better prompts. Reviewers rate the agent's replies, Claude rewrites the prompt based on that feedback, and every new version is tested against simulated customers before it goes to production.
 
-1. **Agentes** — crie o agente; o prompt vira a v1 em produção.
-2. **Simulação** — converse como cliente. Cada turno grava `messages` e um trace em `executions`
-   (input completo, output, tokens, latência).
-3. **Observabilidade** — abra uma conversa, marque respostas com 👍/👎 e contexto extra.
-4. **Fila de melhoria** — selecione feedbacks e clique *Processar com IA*: o otimizador diagnostica
-   padrões, reescreve o prompt (cada mudança cita os feedbacks que a motivaram), gera casos de teste
-   a partir dos feedbacks e roda a bateria na produção atual e na candidata.
-5. **Versões** — na versão em staging veja o diff, os motivos e as notas; *Promover* ou *Rejeitar*
-   (rejeitar devolve os feedbacks para a fila).
+**Stack:** Next.js · Supabase (Postgres + Realtime) · Vercel AI SDK · Claude
 
-## Setup
+## Requirements
+
+- Node.js 22+
+- [Supabase CLI](https://supabase.com/docs/guides/cli)
+- A Supabase project
+- An Anthropic API key
+
+## Run locally
+
+**1. Install dependencies**
 
 ```bash
-supabase link --project-ref <ref>
-supabase db push --include-seed
-cp .env.example .env.local   # URL, anon key, service role key e ANTHROPIC_API_KEY
 npm install
+```
+
+**2. Set up the database**
+
+```bash
+supabase login
+supabase link --project-ref <your-project-ref>
+supabase db push --include-seed
+```
+
+**3. Set environment variables**
+
+```bash
+cp .env.example .env.local
+```
+
+Fill in `.env.local`:
+
+| Variable | Where to find it |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API Keys (anon / publishable) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API Keys (service_role / secret) |
+| `ANTHROPIC_API_KEY` | Anthropic Console → API Keys |
+| `ANTHROPIC_WORKSPACE_ID` | Optional. Only needed if your key is not scoped to a workspace (`wrkspc_...`) |
+
+**4. Start the app**
+
+```bash
 npm run dev
 ```
 
-Deploy: importe o repositório na Vercel e cadastre as mesmas 4 variáveis de ambiente.
+Open http://localhost:3000.
 
-## Notas
+## How to use
 
-- MVP **sem login**: RLS está habilitado, mas com política aberta para `anon`. Antes de expor
-  publicamente, adicione Supabase Auth e troque as políticas `mvp_open_access`.
-- Modelos: o agente usa o modelo escolhido no cadastro (Opus 5.5 ou Sonnet 5.5); otimizador, juiz
-  e cliente simulado usam `claude-opus-5-5`. Os requests usam `fallbacks: 'default'` para recusas
-  de classificador.
-- Otimização e bateria de testes rodam em background com `after()` do Next, com os test runs em
-  paralelo. As rotas `api/optimize` e `api/test-runs` usam `maxDuration = 800` (Vercel Pro com Fluid
-  Compute); no plano Hobby o limite é 300 s — reduza o valor nessas rotas.
+1. **Agents**: create an agent or use one of the two seeded ones.
+2. **Simulation**: chat with the agent as a customer.
+3. **Observability**: open a conversation and rate the agent's replies 👍 / 👎.
+4. **Improvement queue**: select feedback and click *Process with AI*.
+5. **Versions**: review the diff, the reasons and the test scores, then promote or reject.
+
+## Deploy
+
+Import the repository into Vercel and add the same environment variables.
+
+> No login in this MVP. The database is open to the anon key, so don't expose it publicly as is.

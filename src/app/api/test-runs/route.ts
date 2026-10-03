@@ -1,4 +1,4 @@
-// Roda a bateria de testes de uma versão (e da baseline, se informada) sob demanda.
+// Runs a version's test suite (and the baseline's, if provided) on demand.
 import { after } from 'next/server'
 import { db, must } from '@/lib/server/db'
 import { runTests } from '@/lib/server/run-test'
@@ -7,15 +7,15 @@ export const maxDuration = 800
 
 export async function POST(req: Request) {
   const { versionId, baselineId, jobId } = (await req.json()) as { versionId: string; baselineId?: string | null; jobId?: string | null }
-  if (!versionId) return Response.json({ error: 'versionId é obrigatório' }, { status: 400 })
+  if (!versionId) return Response.json({ error: 'versionId is required' }, { status: 400 })
 
-  const version = must(await db.from('prompt_versions').select('agent_id').eq('id', versionId).single(), 'versão')
+  const version = must(await db.from('prompt_versions').select('agent_id').eq('id', versionId).single(), 'version')
   const cases = must(
     await db.from('test_cases').select('id').eq('agent_id', version.agent_id).order('created_at', { ascending: false }).limit(6),
-    'casos de teste',
+    'test cases',
   )
   if (!cases.length) {
-    return Response.json({ error: 'Este agente ainda não tem casos de teste. Crie em Agentes → Bateria de testes.' }, { status: 400 })
+    return Response.json({ error: 'This agent has no test cases yet. Create them under Agents → Test suite.' }, { status: 400 })
   }
 
   const runs = must(

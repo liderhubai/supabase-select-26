@@ -3,15 +3,15 @@ import { z } from 'zod';
 import type { ModelMessage } from 'ai';
 import { OPTIMIZER_MODEL, tracedObject, tracedText } from './ai';
 import { db, must } from './db';
-// Executa um caso de teste: um cliente simulado (LLM) conversa com o agente usando
-// a versão de prompt do run; depois um juiz (LLM) avalia a conversa contra os critérios.
+// Runs a test case: a simulated customer (LLM) talks to the agent using
+// the run's prompt version; then a judge (LLM) evaluates the conversation against the criteria.
 
 const END_TOKEN = '[FIM]';
 
 const judgeSchema = z.object({
-  score: z.number().min(0).max(10).describe('Nota de 0 a 10.'),
-  passed: z.boolean().describe('true se todos os critérios essenciais foram cumpridos.'),
-  reasoning: z.string().describe('Justificativa curta citando trechos da conversa.'),
+  score: z.number().min(0).max(10).describe('Score from 0 to 10.'),
+  passed: z.boolean().describe('true if all essential criteria were met.'),
+  reasoning: z.string().describe('Short justification citing excerpts from the conversation.'),
 });
 
 type Turn = { role: 'user' | 'assistant'; content: string };
@@ -37,27 +37,27 @@ async function runTest(testRunId: string) {
       .insert({
         agent_id: version.agent_id,
         prompt_version_id: version.id,
-        customer_label: `Teste: ${tc.name} (${run.variant})`,
+        customer_label: `Test: ${tc.name} (${run.variant})`,
         source: 'test',
       })
       .select('id')
       .single(),
-    'conversa de teste',
+    'test conversation',
   );
   await db.from('test_runs').update({ conversation_id: conversation.id }).eq('id', testRunId);
 
   const transcript: Turn[] = [];
-  const userInstructions = `Você está interpretando um CLIENTE em uma simulação de atendimento. Nunca diga que é uma IA.
+  const userInstructions = `You are playing a CUSTOMER in a customer service simulation. Never say you are an AI.
 Persona: ${tc.persona}
-Cenário: ${tc.scenario}
-Escreva apenas a próxima mensagem do cliente, curta e natural como numa conversa de WhatsApp.
-Quando seu objetivo estiver resolvido ou a conversa não tiver mais para onde ir, responda apenas ${END_TOKEN}.`;
+Scenario: ${tc.scenario}
+Write only the customer's next message, short and natural like in a WhatsApp conversation.
+When your goal has been resolved or the conversation has nowhere left to go, reply only ${END_TOKEN}.`;
 
   for (let turn = 0; turn < tc.max_turns; turn++) {
-    // Do ponto de vista do cliente simulado, os papéis são invertidos.
+    // From the simulated customer's point of view, the roles are inverted.
     const userView: ModelMessage[] = transcript.length
       ? transcript.map((t) => ({ role: t.role === 'user' ? 'assistant' : 'user', content: t.content }))
-      : [{ role: 'user', content: '(o atendimento começou; envie a primeira mensagem do cliente)' }];
+      : [{ role: 'user', content: '(the conversation has started; send the first customer message)' }];
     if (userView[userView.length - 1].role === 'assistant') break;
 
     const customer = await tracedText({
@@ -102,12 +102,12 @@ Quando seu objetivo estiver resolvido ou a conversa não tiver mais para onde ir
     model: OPTIMIZER_MODEL,
     effort: 'medium',
     schema: judgeSchema,
-    instructions: 'Você é um avaliador rigoroso de qualidade de atendimento. Avalie apenas o AGENTE, com base nos critérios fornecidos.',
-    prompt: `<cenario>${tc.scenario}</cenario>
-<criterios>${tc.expected_behavior}</criterios>
-<conversa>
-${transcript.map((t) => `[${t.role === 'user' ? 'CLIENTE' : 'AGENTE'}] ${t.content}`).join('\n')}
-</conversa>`,
+    instructions: 'You are a rigorous customer service quality evaluator. Evaluate only the AGENT, based on the criteria provided.',
+    prompt: `<scenario>${tc.scenario}</scenario>
+<criteria>${tc.expected_behavior}</criteria>
+<conversation>
+${transcript.map((t) => `[${t.role === 'user' ? 'CUSTOMER' : 'AGENT'}] ${t.content}`).join('\n')}
+</conversation>`,
   });
 
   await db
@@ -139,7 +139,7 @@ async function finishJobIfDone(jobId: string | null) {
   }
 }
 
-/** Executa vários test runs em paralelo na mesma invocação e fecha o job quando todos terminam. */
+/** Runs several test runs in parallel in the same invocation and closes the job when they all finish. */
 export async function runTests(testRunIds: string[], jobId: string | null) {
   await Promise.allSettled(
     testRunIds.map((id) =>

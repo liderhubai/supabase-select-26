@@ -1,8 +1,9 @@
-// Simulação de atendimento: recebe a nova mensagem do usuário, carrega o histórico do banco,
-// faz streaming da resposta do agente e grava mensagem + trace (execution).
+// Conversation simulation: receives the user's new message, loads the history from the database,
+// streams the agent's reply and records the message + trace (execution).
 import { createUIMessageStreamResponse, streamText, toUIMessageStream, type ModelMessage, type UIMessage } from 'ai'
 import { anthropic, anthropicOptions, recordExecution } from '@/lib/server/ai'
 import { db, must } from '@/lib/server/db'
+import { scoreConfidence } from '@/lib/server/confidence'
 
 export const maxDuration = 120
 
@@ -16,16 +17,16 @@ function textOf(message: UIMessage) {
 export async function POST(req: Request) {
   const { conversationId, message } = (await req.json()) as { conversationId: string; message: UIMessage }
   const userText = textOf(message)
-  if (!conversationId || !userText) return Response.json({ error: 'conversationId e mensagem são obrigatórios' }, { status: 400 })
+  if (!conversationId || !userText) return Response.json({ error: 'conversationId and message are required' }, { status: 400 })
 
   const conversation = must(
     await db.from('conversations').select('id, prompt_version_id, agents(model), prompt_versions(system_prompt)').eq('id', conversationId).single(),
-    'conversa',
+    'conversation',
   ) as unknown as { id: string; prompt_version_id: string; agents: { model: string }; prompt_versions: { system_prompt: string } }
 
-  must(await db.from('messages').insert({ conversation_id: conversationId, role: 'user', content: userText }).select('id').single(), 'mensagem do usuário')
+  must(await db.from('messages').insert({ conversation_id: conversationId, role: 'user', content: userText }).select('id').single(), 'user message')
 
-  const history = must(await db.from('messages').select('role, content').eq('conversation_id', conversationId).order('created_at'), 'histórico')
+  const history = must(await db.from('messages').select('role, content').eq('conversation_id', conversationId).order('created_at'), 'history')
 
   const model = conversation.agents.model
   const instructions = conversation.prompt_versions.system_prompt
@@ -47,7 +48,18 @@ export async function POST(req: Request) {
       ...extra,
     })
     if (output) {
-      await db.from('messages').insert({ conversation_id: conversationId, role: 'assistant', content: output, execution_id: executionId })
+      const { data: saved } = await db
+        .from('messages')
+        .insert({ conversation_id: conversationId, role: 'assistant', content: output, execution_id: executionId })
+        .select('id')
+        .single()
+      // Confidence scorer agent; a failure here must not lose the reply.
+      try {
+        const c = await scoreConfidence({ conversationId, promptVersionId: conversation.prompt_version_id, instructions, history, reply: output })
+        if (saved) await db.from('messages').update({ confidence: c.score, confidence_reason: c.reason }).eq('id', saved.id)
+      } catch (e) {
+        console.error('scoreConfidence', e)
+      }
     }
   }
 
@@ -56,9 +68,9 @@ export async function POST(req: Request) {
     instructions,
     messages,
     maxOutputTokens: 8000,
-    // Atendimento conversacional: effort baixo mantém latência e custo baixos.
+    // Conversational support: low effort keeps latency and cost down.
     providerOptions: anthropicOptions('low'),
-    // Os callbacks rodam enquanto o stream ainda está aberto, então a invocação segue viva até gravar.
+    // The callbacks run while the stream is still open, so the invocation stays alive until the write completes.
     onEnd: (event) =>
       persist(event.text, {
         inputTokens: event.usage.inputTokens,
@@ -69,7 +81,7 @@ export async function POST(req: Request) {
   })
 
   return createUIMessageStreamResponse({
-    // App interno: mostra o erro real no chat (o padrão do SDK mascara como "An error occurred").
+    // Internal app: shows the real error in the chat (the SDK default masks it as "An error occurred").
     stream: toUIMessageStream({ stream: result.stream, onError: (error) => (error instanceof Error ? error.message : String(error)) }),
   })
 }

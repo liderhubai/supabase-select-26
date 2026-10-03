@@ -1,4 +1,4 @@
--- Promove uma versão para produção (arquiva a anterior) de forma atômica.
+-- Atomically promotes a version to production (archives the previous one).
 create or replace function public.promote_version(p_version_id uuid)
 returns void
 language plpgsql
@@ -10,7 +10,7 @@ declare
 begin
   select agent_id into v_agent from prompt_versions where id = p_version_id for update;
   if v_agent is null then
-    raise exception 'Versão % não encontrada', p_version_id;
+    raise exception 'Version % not found', p_version_id;
   end if;
 
   update prompt_versions set status = 'archived'
@@ -26,7 +26,7 @@ begin
      and status = 'processing';
 end $$;
 
--- Rejeita uma versão em staging e devolve os feedbacks para a fila.
+-- Rejects a staging version and returns its feedback to the queue.
 create or replace function public.reject_version(p_version_id uuid)
 returns void
 language plpgsql
@@ -41,7 +41,7 @@ begin
      and status = 'processing';
 end $$;
 
--- Cria uma nova versão (draft) a partir de uma edição manual do prompt.
+-- Creates a new (draft) version from a manual edit of the prompt.
 create or replace function public.create_prompt_version(p_agent_id uuid, p_system_prompt text, p_summary text default null)
 returns uuid
 language plpgsql
@@ -57,12 +57,12 @@ begin
   select production_version_id into v_parent from agents where id = p_agent_id;
 
   insert into prompt_versions (agent_id, version, system_prompt, status, parent_version_id, change_summary)
-  values (p_agent_id, v_next, p_system_prompt, 'draft', v_parent, coalesce(p_summary, 'Edição manual'))
+  values (p_agent_id, v_next, p_system_prompt, 'draft', v_parent, coalesce(p_summary, 'Manual edit'))
   returning id into v_id;
   return v_id;
 end $$;
 
--- Cria agente + v1 em produção.
+-- Creates an agent + v1 in production.
 create or replace function public.create_agent(p_name text, p_kind text, p_description text, p_model text, p_system_prompt text)
 returns uuid
 language plpgsql
@@ -78,7 +78,7 @@ begin
   returning id into v_agent;
 
   insert into prompt_versions (agent_id, version, system_prompt, status, change_summary, promoted_at)
-  values (v_agent, 1, p_system_prompt, 'production', 'Versão inicial', now())
+  values (v_agent, 1, p_system_prompt, 'production', 'Initial version', now())
   returning id into v_version;
 
   update agents set production_version_id = v_version where id = v_agent;

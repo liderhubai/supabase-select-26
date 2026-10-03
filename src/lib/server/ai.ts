@@ -4,7 +4,7 @@ import { generateText, Output, type ModelMessage } from 'ai';
 import type { z } from 'zod';
 import { db } from './db';
 
-// Chaves de usuário (sk-ant-usr…) não vinculadas a um workspace exigem o header anthropic-workspace-id.
+// User keys (sk-ant-usr…) not tied to a workspace require the anthropic-workspace-id header.
 const workspaceId = process.env.ANTHROPIC_WORKSPACE_ID;
 
 export const anthropic = createAnthropic({
@@ -12,8 +12,8 @@ export const anthropic = createAnthropic({
   headers: workspaceId ? { 'anthropic-workspace-id': workspaceId } : undefined,
 });
 
-/** Modelo usado pelo otimizador (reflexão), juiz e usuário simulado. */
-export const OPTIMIZER_MODEL = 'claude-opus-5-5';
+/** Model used by the optimizer (reflection), the judge and the simulated user. */
+export const OPTIMIZER_MODEL = 'claude-sonnet-5-5';
 
 type Effort = NonNullable<AnthropicLanguageModelOptions['effort']>;
 
@@ -21,13 +21,13 @@ export function anthropicOptions(effort: Effort) {
   return {
     anthropic: {
       effort,
-      // Se um classificador de segurança recusar o turno, a API refaz no modelo de fallback recomendado.
+      // If a safety classifier refuses the turn, the API retries on the recommended fallback model.
       fallbacks: 'default',
     } satisfies AnthropicLanguageModelOptions,
   };
 }
 
-export type ExecutionKind = 'chat' | 'optimize' | 'test_user' | 'test_agent' | 'judge';
+export type ExecutionKind = 'chat' | 'optimize' | 'test_user' | 'test_agent' | 'judge' | 'confidence';
 
 export interface TraceContext {
   kind: ExecutionKind;
@@ -35,7 +35,7 @@ export interface TraceContext {
   promptVersionId?: string | null;
 }
 
-/** Grava um trace (execution) com input, output, tokens e latência. Retorna o id. */
+/** Records a trace (execution) with input, output, tokens and latency. Returns the id. */
 export async function recordExecution(args: TraceContext & {
   model: string;
   input: unknown;
@@ -67,7 +67,7 @@ export async function recordExecution(args: TraceContext & {
   return data?.id ?? null;
 }
 
-/** generateText com trace automático em `executions`. */
+/** generateText with automatic tracing into `executions`. */
 export async function tracedText(opts: TraceContext & {
   model: string;
   instructions: string;
@@ -101,7 +101,7 @@ export async function tracedText(opts: TraceContext & {
   }
 }
 
-/** generateText + Output.object com trace automático. */
+/** generateText + Output.object with automatic tracing. */
 export async function tracedObject<S extends z.ZodType>(opts: TraceContext & {
   model: string;
   instructions: string;
