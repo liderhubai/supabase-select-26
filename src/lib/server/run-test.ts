@@ -1,7 +1,7 @@
 import 'server-only'
 import { z } from 'zod';
 import type { ModelMessage } from 'ai';
-import { OPTIMIZER_MODEL, tracedObject, tracedText } from './ai';
+import { ROLE_MODELS, tracedObject, tracedText } from './ai';
 import { db, must } from './db';
 // Runs a test case: a simulated customer (LLM) talks to the agent using
 // the run's prompt version; then a judge (LLM) evaluates the conversation against the criteria.
@@ -64,7 +64,7 @@ When your goal has been resolved or the conversation has nowhere left to go, rep
       kind: 'test_user',
       conversationId: conversation.id,
       promptVersionId: version.id,
-      model: OPTIMIZER_MODEL,
+      model: ROLE_MODELS.simulatedUser,
       effort: 'low',
       instructions: userInstructions,
       messages: userView,
@@ -99,7 +99,7 @@ When your goal has been resolved or the conversation has nowhere left to go, rep
     kind: 'judge',
     conversationId: conversation.id,
     promptVersionId: version.id,
-    model: OPTIMIZER_MODEL,
+    model: ROLE_MODELS.judge,
     effort: 'medium',
     schema: judgeSchema,
     instructions: 'You are a rigorous customer service quality evaluator. Evaluate only the AGENT, based on the criteria provided.',

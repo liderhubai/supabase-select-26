@@ -1,6 +1,6 @@
 import 'server-only'
 import { z } from 'zod';
-import { OPTIMIZER_MODEL, tracedObject } from './ai';
+import { ROLE_MODELS, tracedObject } from './ai';
 import { db, must } from './db';
 import { runTests } from './run-test';
 // Self-improvement (GEPA-style reflection): consolidates annotated feedback on real conversations,
@@ -53,6 +53,7 @@ type FeedbackRow = {
   rating: 'positive' | 'negative';
   comment: string;
   reviewer_name: string;
+  origin: 'human' | 'auto';
   message_id: string;
   conversation_id: string;
   prompt_version_id: string;
@@ -79,7 +80,7 @@ async function annotatedTraces(feedbacks: FeedbackRow[]) {
       const transcript = window
         .map((m) => `${m.id === f.message_id ? '>>> ' : ''}[${m.role === 'user' ? 'CUSTOMER' : 'AGENT'}] ${m.content}`)
         .join('\n');
-      return `<feedback id="${f.id}" rating="${f.rating}" prompt_version="v${f.prompt_versions.version}" reviewer="${f.reviewer_name}">
+      return `<feedback id="${f.id}" rating="${f.rating}" prompt_version="v${f.prompt_versions.version}" reviewer="${f.reviewer_name}" origin="${f.origin}">
 <conversation>
 ${transcript}
 </conversation>
@@ -97,7 +98,7 @@ export async function runOptimization(jobId: string) {
   const feedbacks = must(
     await db
       .from('feedbacks')
-      .select('id, rating, comment, reviewer_name, message_id, conversation_id, prompt_version_id, prompt_versions(version)')
+      .select('id, rating, comment, reviewer_name, origin, message_id, conversation_id, prompt_version_id, prompt_versions(version)')
       .in('id', job.feedback_ids),
     'feedbacks',
   ) as unknown as FeedbackRow[];
@@ -109,7 +110,7 @@ export async function runOptimization(jobId: string) {
   const reflection = await tracedObject({
     kind: 'optimize',
     promptVersionId: base.id,
-    model: OPTIMIZER_MODEL,
+    model: ROLE_MODELS.optimizer,
     effort: 'high',
     schema: reflectionSchema,
     instructions: `You are a prompt engineer specialized in customer service agents.
@@ -120,6 +121,7 @@ Rules:
 - Preserve business facts (prices, hours, policies) unless a feedback item explicitly says they are wrong.
 - Prefer general instructions that fix the class of error, not patches for a single conversation.
 - Positive feedback indicates behaviors that should be kept or reinforced.
+- Feedback with origin="human" comes from a reviewer. Feedback with origin="auto" was filed by an automated confidence scorer: treat it as a signal to verify against the conversation, and give human feedback precedence when they conflict.
 - Each change must cite the IDs of the feedback items that motivated it.
 - Write the new prompt in the same language as the original.`,
     prompt: `<agent name="${agent.name}" type="${agent.kind}">${agent.description}</agent>
@@ -178,7 +180,7 @@ Produce the diagnosis, the patterns, the complete new prompt and the list of jus
   const generated = await tracedObject({
     kind: 'optimize',
     promptVersionId: candidate.id,
-    model: OPTIMIZER_MODEL,
+    model: ROLE_MODELS.optimizer,
     effort: 'medium',
     schema: testCasesSchema,
     instructions: `You create test cases to simulate customer conversations and evaluate an agent.

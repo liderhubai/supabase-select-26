@@ -1,23 +1,50 @@
 'use client'
 
-import { ListFilter, Search, SquarePen, ThumbsDown, ThumbsUp } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { conversations, tagToneClass, type Conversation } from './data'
+import { useState } from 'react'
+import { Search, SquarePen, ThumbsDown, ThumbsUp } from 'lucide-react'
+import { ago, cn } from '@/lib/utils'
+import { lastActivity, minConfidence, type ConversationRow } from './data'
 
 const gradient = 'bg-[linear-gradient(135deg,#ff6600_14.645%,#7a2e00_85.355%)]'
 
-export function Inbox({ selected, onSelect }: { selected: number; onSelect: (id: number) => void }) {
+export function Inbox({
+  conversations,
+  loading,
+  selected,
+  onSelect,
+  onCreate,
+  creating,
+  createError,
+}: {
+  conversations: ConversationRow[]
+  loading: boolean
+  selected?: string
+  onSelect: (id: string) => void
+  onCreate: () => void
+  creating: boolean
+  createError?: string
+}) {
+  const [query, setQuery] = useState('')
+  const q = query.trim().toLowerCase()
+  const visible = q
+    ? conversations.filter((c) => c.customer_label.toLowerCase().includes(q) || c.messages.some((m) => m.content.toLowerCase().includes(q)))
+    : conversations
+
   return (
     <section className="flex h-full w-[320px] shrink-0 flex-col overflow-hidden border-r border-border bg-surface">
       <header className="flex h-[72px] shrink-0 items-center gap-[8px] border-b border-border pr-[16px] pl-[20px]">
         <div className="flex flex-1 items-center gap-[8px]">
-          <span className="font-display text-[17px] font-semibold text-foreground">Conversas</span>
-          <span className="rounded-full bg-muted px-[7px] py-[2px] font-mono text-[11px] text-muted-foreground">24</span>
+          <span className="font-display text-[17px] font-semibold text-foreground">Conversations</span>
+          <span className="rounded-full bg-muted px-[7px] py-[2px] font-mono text-[11px] text-muted-foreground">{conversations.length}</span>
         </div>
-        <button type="button" aria-label="Filtrar" className="flex h-[32px] w-[32px] items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-surface-raised">
-          <ListFilter size={16} />
-        </button>
-        <button type="button" aria-label="Nova conversa" className="flex h-[32px] w-[32px] items-center justify-center rounded-full bg-accent text-white">
+        <button
+          type="button"
+          aria-label="New conversation"
+          title="New conversation"
+          onClick={onCreate}
+          disabled={creating}
+          className="flex h-[32px] w-[32px] items-center justify-center rounded-full bg-accent text-white disabled:opacity-50"
+        >
           <SquarePen size={16} />
         </button>
       </header>
@@ -26,15 +53,21 @@ export function Inbox({ selected, onSelect }: { selected: number; onSelect: (id:
         <label className="flex h-[36px] w-full items-center gap-[8px] rounded-[6px] border border-border bg-background px-[10px]">
           <Search size={15} className="shrink-0 text-subtle-foreground" />
           <input
-            placeholder="Buscar mensagem ou sessão…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search messages or sessions…"
             className="min-w-0 flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-subtle-foreground"
           />
-          <span className="font-mono text-[11px] text-subtle-foreground">⌘K</span>
         </label>
+        {createError && <span className="text-[12px] text-error">{createError}</span>}
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        {conversations.map((c) => (
+        {loading && <span className="px-[20px] py-[12px] text-[13px] text-subtle-foreground">Loading…</span>}
+        {!loading && !visible.length && (
+          <span className="px-[20px] py-[12px] text-[13px] text-subtle-foreground">{q ? 'No matches.' : 'No conversations yet.'}</span>
+        )}
+        {visible.map((c) => (
           <ConversationItem key={c.id} c={c} active={c.id === selected} onClick={() => onSelect(c.id)} />
         ))}
       </div>
@@ -42,8 +75,12 @@ export function Inbox({ selected, onSelect }: { selected: number; onSelect: (id:
   )
 }
 
-function ConversationItem({ c, active, onClick }: { c: Conversation; active: boolean; onClick: () => void }) {
-  const bold = c.processing || !!c.unread
+function ConversationItem({ c, active, onClick }: { c: ConversationRow; active: boolean; onClick: () => void }) {
+  const last = c.messages.at(-1)
+  const preview = last ? `${last.role === 'user' ? 'Customer' : 'Agent'}: ${last.content}` : 'No messages yet'
+  const up = c.feedbacks.filter((f) => f.rating === 'positive').length
+  const down = c.feedbacks.length - up
+  const min = minConfidence(c)
   return (
     <button
       type="button"
@@ -60,12 +97,13 @@ function ConversationItem({ c, active, onClick }: { c: Conversation; active: boo
           active ? cn(gradient, 'text-white') : 'bg-muted text-muted-foreground',
         )}
       >
-        {c.id}
-        {c.status && (
+        {c.customer_label.match(/\d+/)?.[0] ?? c.customer_label.charAt(0)}
+        {min != null && (
           <span
+            title={`Lowest reply confidence: ${min}%`}
             className={cn(
               'absolute top-[26px] left-[26px] h-[12px] w-[12px] rounded-full border-2',
-              c.status === 'success' ? 'bg-success' : 'bg-warning',
+              min >= 60 ? 'bg-success' : 'bg-warning',
               active ? 'border-surface-raised' : 'border-surface',
             )}
           />
@@ -73,43 +111,27 @@ function ConversationItem({ c, active, onClick }: { c: Conversation; active: boo
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-[4px]">
         <div className="flex items-center gap-[8px]">
-          <span className={cn('flex-1 truncate text-[14px] text-foreground', bold ? 'font-semibold' : 'font-medium')}>
-            Sessão #{c.id}
-          </span>
-          <span className={cn('font-mono text-[11px]', c.unread ? 'text-accent' : 'text-subtle-foreground')}>{c.when}</span>
+          <span className="flex-1 truncate text-[14px] font-medium text-foreground">{c.customer_label}</span>
+          <span className="shrink-0 font-mono text-[11px] text-subtle-foreground">{ago(lastActivity(c))}</span>
         </div>
-        <div className="flex items-center gap-[8px]">
-          <span
-            className={cn(
-              'min-w-0 flex-1 truncate text-[13px]',
-              c.processing ? 'text-accent-foreground italic' : c.unread ? 'text-foreground' : 'text-muted-foreground',
-            )}
-          >
-            {c.preview}
-          </span>
-          {c.unread ? (
-            <span className="flex h-[18px] items-center justify-center rounded-full bg-accent px-[6px] text-[11px] font-semibold text-white">
-              {c.unread}
-            </span>
-          ) : null}
-        </div>
+        <span className="truncate text-[13px] text-muted-foreground">{preview}</span>
         <div className="flex items-center gap-[10px] pt-[2px]">
-          {c.tag && (
-            <span className={cn('rounded-[6px] px-[6px] py-[2px] text-[11px] font-medium', tagToneClass[c.tag.tone])}>{c.tag.label}</span>
+          {c.prompt_versions && (
+            <span className="rounded-[6px] border border-border px-[6px] py-[1px] font-mono text-[11px] text-muted-foreground">v{c.prompt_versions.version}</span>
           )}
           <span className="h-px flex-1" />
-          {c.up ? (
+          {up > 0 && (
             <span className="flex items-center gap-[3px] text-success">
               <ThumbsUp size={12} />
-              <span className="font-mono text-[11px]">{c.up}</span>
+              <span className="font-mono text-[11px]">{up}</span>
             </span>
-          ) : null}
-          {c.down ? (
+          )}
+          {down > 0 && (
             <span className="flex items-center gap-[3px] text-error">
               <ThumbsDown size={12} />
-              <span className="font-mono text-[11px]">{c.down}</span>
+              <span className="font-mono text-[11px]">{down}</span>
             </span>
-          ) : null}
+          )}
         </div>
       </div>
     </button>

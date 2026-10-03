@@ -2,35 +2,86 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Activity, ChevronsUpDown, MessagesSquare, ThumbsUp } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { Activity, ChevronsUpDown, FlaskConical, MessagesSquare, ThumbsUp } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import { useCurrentAgent } from '@/lib/queries'
 import { cn } from '@/lib/utils'
 import { Logo } from './Logo'
 
-// Sidebar fixa do app itera.ai — medidas e cores exatas do untitled.pen (frame "Sidebar", 248px).
-const nav = [
-  { section: 'AGENTE', items: [
-    { href: '/app/chats', label: 'Chats', count: '24', icon: MessagesSquare },
-    { href: '/app/execucoes', label: 'Execuções', count: '312', icon: Activity },
-  ] },
-  { section: 'TREINO', items: [
-    { href: '/app/feedback', label: 'Feedback', count: '18', icon: ThumbsUp },
-  ] },
+type CountKey = 'chats' | 'executions' | 'feedback' | 'trainings'
+
+const nav: { section: string; items: { href: string; label: string; count: CountKey; icon: typeof Activity }[] }[] = [
+  {
+    section: 'AGENT',
+    items: [
+      { href: '/app/chats', label: 'Chats', count: 'chats', icon: MessagesSquare },
+      { href: '/app/executions', label: 'Executions', count: 'executions', icon: Activity },
+    ],
+  },
+  {
+    section: 'TRAINING',
+    items: [
+      { href: '/app/feedback', label: 'Feedback', count: 'feedback', icon: ThumbsUp },
+      { href: '/app/trainings', label: 'Trainings', count: 'trainings', icon: FlaskConical },
+    ],
+  },
 ]
+
+function useCounts(agentId: string | undefined) {
+  return useQuery({
+    queryKey: ['counts', agentId],
+    enabled: !!agentId,
+    refetchInterval: 15_000,
+    queryFn: async (): Promise<Record<CountKey, number>> => {
+      const id = agentId!
+      const [chats, executions, feedback, trainings] = await Promise.all([
+        supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('agent_id', id).eq('source', 'simulation'),
+        supabase
+          .from('executions')
+          .select('id, conversations!inner(agent_id)', { count: 'exact', head: true })
+          .eq('kind', 'chat')
+          .eq('conversations.agent_id', id),
+        supabase.from('feedbacks').select('id', { count: 'exact', head: true }).eq('agent_id', id).eq('status', 'pending'),
+        supabase.from('optimization_jobs').select('id', { count: 'exact', head: true }).eq('agent_id', id),
+      ])
+      return { chats: chats.count ?? 0, executions: executions.count ?? 0, feedback: feedback.count ?? 0, trainings: trainings.count ?? 0 }
+    },
+  })
+}
 
 export function Sidebar() {
   const pathname = usePathname()
+  const { agent, agents, setAgentId } = useCurrentAgent()
+  const { data: counts } = useCounts(agent?.id)
+
   return (
     <aside className="flex h-full w-[248px] shrink-0 flex-col border-r border-border bg-background">
       <div className="flex flex-col gap-[16px] px-[16px] pt-[18px] pb-[12px]">
-        <Logo />
-        <button
-          type="button"
-          className="flex h-[40px] w-full items-center gap-[10px] rounded-[12px] bg-surface px-[10px] outline outline-1 -outline-offset-[0.5px] outline-border"
-        >
-          <span className="flex h-[20px] w-[20px] items-center justify-center rounded-[5px] bg-primary text-[11px] font-semibold text-white">S</span>
-          <span className="flex-1 text-left text-[14px] font-medium text-foreground">Agente SDR · v3</span>
-          <ChevronsUpDown size={14} className="text-subtle-foreground" />
-        </button>
+        <Link href="/" aria-label="itera.ai home">
+          <Logo />
+        </Link>
+        <label className="relative flex h-[40px] w-full items-center gap-[10px] rounded-[12px] bg-surface px-[10px] outline outline-1 -outline-offset-[0.5px] outline-border">
+          <span className="flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-[5px] bg-primary text-[11px] font-semibold text-white">
+            {agent?.name.charAt(0).toUpperCase() ?? '·'}
+          </span>
+          <span className="min-w-0 flex-1 truncate text-left text-[14px] font-medium text-foreground">
+            {agent ? `${agent.name}${agent.production ? ` · v${agent.production.version}` : ''}` : 'Loading…'}
+          </span>
+          <ChevronsUpDown size={14} className="shrink-0 text-subtle-foreground" />
+          <select
+            aria-label="Select agent"
+            value={agent?.id ?? ''}
+            onChange={(e) => setAgentId(e.target.value)}
+            className="absolute inset-0 cursor-pointer opacity-0"
+          >
+            {agents.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <nav className="flex flex-1 flex-col gap-[2px] px-[12px]">
@@ -54,7 +105,7 @@ export function Sidebar() {
                 >
                   <Icon size={16} />
                   <span className="flex-1 text-[14px] font-medium">{label}</span>
-                  <span className="font-mono text-[11px] text-subtle-foreground">{count}</span>
+                  <span className="font-mono text-[11px] text-subtle-foreground">{counts?.[count] ?? ''}</span>
                 </Link>
               )
             })}
@@ -62,25 +113,11 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="flex flex-col gap-[12px] border-t border-border p-[16px]">
-        <div className="flex flex-col gap-[8px]">
-          <div className="flex items-start justify-between">
-            <span className="text-[12px] text-muted-foreground">Feedbacks p/ próximo treino</span>
-            <span className="font-mono text-[11px] text-muted-foreground">18 / 30</span>
-          </div>
-          <div className="h-[4px] w-full rounded-[2px] bg-muted">
-            <div className="h-[4px] rounded-[2px] bg-primary" style={{ width: '60%' }} />
-          </div>
-        </div>
-        <div className="flex items-center gap-[10px]">
-          <div className="flex h-[28px] w-[28px] items-center justify-center rounded-full bg-[linear-gradient(135deg,#ff6600_14.645%,#7a2e00_85.355%)] text-[11px] font-semibold text-white">
-            GB
-          </div>
-          <div className="flex flex-1 flex-col">
-            <span className="text-[13px] font-medium text-foreground">Gabriel Barbosa</span>
-            <span className="text-[12px] text-subtle-foreground">gabriel@liderhub.ai</span>
-          </div>
-        </div>
+      <div className="flex flex-col gap-[4px] border-t border-border p-[16px]">
+        <span className="text-[12px] text-muted-foreground">Pending feedback for next training</span>
+        <Link href="/app/feedback" className="font-display text-[18px] font-medium text-foreground hover:text-accent">
+          {counts?.feedback ?? '—'}
+        </Link>
       </div>
     </aside>
   )

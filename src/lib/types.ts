@@ -41,6 +41,12 @@ export interface Conversation {
   created_at: string
 }
 
+export interface ConfidenceIssue {
+  type: 'invented_fact' | 'policy_violation' | 'missing_confirmation' | 'wrong_answer' | 'off_topic' | 'tone' | 'unsafe'
+  excerpt: string
+  explanation: string
+}
+
 export interface Message {
   id: string
   conversation_id: string
@@ -49,6 +55,7 @@ export interface Message {
   execution_id: string | null
   confidence: number | null
   confidence_reason: string | null
+  confidence_issues: ConfidenceIssue[]
   created_at: string
 }
 
@@ -78,6 +85,7 @@ export interface Feedback {
   rating: 'positive' | 'negative'
   comment: string
   reviewer_name: string
+  origin: 'human' | 'auto'
   status: 'pending' | 'processing' | 'processed' | 'dismissed'
   optimization_job_id: string | null
   created_at: string

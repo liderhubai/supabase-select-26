@@ -12,12 +12,23 @@ export const anthropic = createAnthropic({
   headers: workspaceId ? { 'anthropic-workspace-id': workspaceId } : undefined,
 });
 
-/** Model used by the optimizer (reflection), the judge and the simulated user. */
-export const OPTIMIZER_MODEL = 'claude-sonnet-5-5';
+/**
+ * Model per supporting role. Roles that evaluate the agent (optimizer, judge, confidence scorer) use a
+ * stronger model than the default agent (Sonnet), so the evaluator isn't grading its own model's work.
+ * The simulated customer only role-plays, so it runs on the cheapest model.
+ */
+export const ROLE_MODELS = {
+  optimizer: 'claude-opus-5-5',
+  judge: 'claude-opus-5-5',
+  confidence: 'claude-opus-5-5',
+  simulatedUser: 'claude-haiku-4-5',
+} as const;
 
 type Effort = NonNullable<AnthropicLanguageModelOptions['effort']>;
 
-export function anthropicOptions(effort: Effort) {
+export function anthropicOptions(model: string, effort: Effort) {
+  // Haiku 4.5 supports neither `effort` nor server-side fallbacks.
+  if (model.startsWith('claude-haiku-4-5')) return { anthropic: {} satisfies AnthropicLanguageModelOptions };
   return {
     anthropic: {
       effort,
@@ -83,7 +94,7 @@ export async function tracedText(opts: TraceContext & {
       instructions: opts.instructions,
       messages: opts.messages,
       maxOutputTokens: opts.maxOutputTokens ?? 16000,
-      providerOptions: anthropicOptions(opts.effort),
+      providerOptions: anthropicOptions(opts.model, opts.effort),
     });
     const executionId = await recordExecution({
       ...opts,
@@ -119,7 +130,7 @@ export async function tracedObject<S extends z.ZodType>(opts: TraceContext & {
       prompt: opts.prompt,
       output: Output.object({ schema: opts.schema }),
       maxOutputTokens: opts.maxOutputTokens ?? 32000,
-      providerOptions: anthropicOptions(opts.effort),
+      providerOptions: anthropicOptions(opts.model, opts.effort),
     });
     await recordExecution({
       ...opts,

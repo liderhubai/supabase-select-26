@@ -3,7 +3,7 @@
 import { createUIMessageStreamResponse, streamText, toUIMessageStream, type ModelMessage, type UIMessage } from 'ai'
 import { anthropic, anthropicOptions, recordExecution } from '@/lib/server/ai'
 import { db, must } from '@/lib/server/db'
-import { scoreConfidence } from '@/lib/server/confidence'
+import { applyConfidence, scoreConfidence } from '@/lib/server/confidence'
 
 export const maxDuration = 120
 
@@ -55,8 +55,10 @@ export async function POST(req: Request) {
         .single()
       // Confidence scorer agent; a failure here must not lose the reply.
       try {
-        const c = await scoreConfidence({ conversationId, promptVersionId: conversation.prompt_version_id, instructions, history, reply: output })
-        if (saved) await db.from('messages').update({ confidence: c.score, confidence_reason: c.reason }).eq('id', saved.id)
+        const result = await scoreConfidence({ conversationId, promptVersionId: conversation.prompt_version_id, instructions, history, reply: output })
+        if (saved) {
+          await applyConfidence({ messageId: saved.id, conversationId, executionId, promptVersionId: conversation.prompt_version_id, result })
+        }
       } catch (e) {
         console.error('scoreConfidence', e)
       }
@@ -69,7 +71,7 @@ export async function POST(req: Request) {
     messages,
     maxOutputTokens: 8000,
     // Conversational support: low effort keeps latency and cost down.
-    providerOptions: anthropicOptions('low'),
+    providerOptions: anthropicOptions(model, 'low'),
     // The callbacks run while the stream is still open, so the invocation stays alive until the write completes.
     onEnd: (event) =>
       persist(event.text, {
