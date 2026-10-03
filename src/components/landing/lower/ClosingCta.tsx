@@ -7,7 +7,7 @@ export function ClosingCta() {
       <div className="relative h-[620px] w-full overflow-hidden rounded-[20px] border border-[#ffffff1a] bg-[#111113]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/landing/generated-2.png" alt="" className="absolute inset-0 size-full object-cover" />
-        <div className="absolute inset-0 bg-[linear-gradient(0deg,#09090bf2_0%,#09090b99_60%,#09090b33_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,#09090bf2_0%,#09090b99_60%,#09090b33_100%)]" />
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-[28px] px-[64px]">
           <h2 className="w-full text-center font-display text-[60px] leading-[1.08] font-medium tracking-[-1.8px] text-[#fafafa]">
             Agents don&apos;t need better benchmarks.
