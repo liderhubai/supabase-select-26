@@ -162,7 +162,7 @@ function TracesCard() {
             <span className="font-mono text-[11px] text-[#71717a]">{r.t}</span>
             <span className="w-[40px] shrink-0 font-mono text-[11px] text-[#d4d4d8]">{r.who}</span>
             <span className="w-[22px] shrink-0 font-mono text-[11px] text-[#71717a]">{r.v}</span>
-            <span className="min-w-0 flex-1 truncate font-body text-[12px] text-[#a1a1aa]">{r.msg}</span>
+            <span className="min-w-0 flex-1 font-body text-[12px] text-[#a1a1aa]">{r.msg}</span>
           </div>
         ))}
       </div>
