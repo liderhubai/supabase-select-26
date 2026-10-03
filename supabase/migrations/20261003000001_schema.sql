@@ -1,7 +1,7 @@
--- Simulador de atendimento + observabilidade + auto-melhoria de prompts
+-- Customer service simulator + observability + prompt self-improvement
 create extension if not exists pgcrypto;
 
--- Agentes ---------------------------------------------------------------
+-- Agents ---------------------------------------------------------------
 create table public.agents (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -33,12 +33,12 @@ alter table public.agents
   add constraint agents_production_version_fk
   foreign key (production_version_id) references public.prompt_versions(id) on delete set null;
 
--- Conversas / mensagens / traces ----------------------------------------
+-- Conversations / messages / traces ----------------------------------------
 create table public.conversations (
   id uuid primary key default gen_random_uuid(),
   agent_id uuid not null references public.agents(id) on delete cascade,
   prompt_version_id uuid not null references public.prompt_versions(id),
-  customer_label text not null default 'Cliente simulado',
+  customer_label text not null default 'Simulated customer',
   source text not null default 'simulation' check (source in ('simulation', 'test')),
   created_at timestamptz not null default now()
 );
@@ -68,7 +68,7 @@ create table public.messages (
   created_at timestamptz not null default now()
 );
 
--- Feedback e fila de auto-melhoria --------------------------------------
+-- Feedback and self-improvement queue --------------------------------------
 create table public.optimization_jobs (
   id uuid primary key default gen_random_uuid(),
   agent_id uuid not null references public.agents(id) on delete cascade,
@@ -96,14 +96,14 @@ create table public.feedbacks (
   agent_id uuid not null references public.agents(id) on delete cascade,
   rating text not null check (rating in ('positive', 'negative')),
   comment text not null default '',
-  reviewer_name text not null default 'Revisor',
+  reviewer_name text not null default 'Reviewer',
   status text not null default 'pending'
     check (status in ('pending', 'processing', 'processed', 'dismissed')),
   optimization_job_id uuid references public.optimization_jobs(id) on delete set null,
   created_at timestamptz not null default now()
 );
 
--- Bateria de testes -----------------------------------------------------
+-- Test suite -----------------------------------------------------
 create table public.test_cases (
   id uuid primary key default gen_random_uuid(),
   agent_id uuid not null references public.agents(id) on delete cascade,
@@ -133,7 +133,7 @@ create table public.test_runs (
   finished_at timestamptz
 );
 
--- Índices ---------------------------------------------------------------
+-- Indexes ---------------------------------------------------------------
 create index on public.prompt_versions (agent_id, version desc);
 create index on public.conversations (agent_id, created_at desc);
 create index on public.messages (conversation_id, created_at);
@@ -142,8 +142,8 @@ create index on public.feedbacks (status, agent_id);
 create index on public.test_runs (job_id);
 create index on public.test_runs (prompt_version_id);
 
--- RLS: MVP sem login -> acesso liberado para anon/authenticated.
--- TODO(auth): trocar por políticas baseadas em auth.uid() quando houver login.
+-- RLS: MVP without login -> open access for anon/authenticated.
+-- TODO(auth): replace with auth.uid()-based policies once login exists.
 do $$
 declare t text;
 begin
@@ -155,5 +155,5 @@ begin
   end loop;
 end $$;
 
--- Realtime para progresso da fila e da bateria de testes
+-- Realtime for queue and test suite progress
 alter publication supabase_realtime add table public.optimization_jobs, public.test_runs, public.feedbacks;

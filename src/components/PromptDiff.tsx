@@ -68,7 +68,7 @@ export function PromptDiff({ oldText, newText, oldLabel, newLabel }: { oldText: 
         <div className="flex gap-1">
           {(['split', 'changes'] as const).map((m) => (
             <button key={m} onClick={() => setMode(m)} className={cn('rounded px-2 py-0.5', mode === m ? 'bg-zinc-900 text-white' : 'text-zinc-600 hover:bg-zinc-200')}>
-              {m === 'split' ? 'Completo' : 'Só mudanças'}
+              {m === 'split' ? 'Full' : 'Changes only'}
             </button>
           ))}
         </div>
@@ -100,7 +100,7 @@ export function PromptDiff({ oldText, newText, oldLabel, newLabel }: { oldText: 
             </div>
           </div>
         ))}
-        {!visible.length && <div className="p-4 text-center text-zinc-400">Sem diferenças.</div>}
+        {!visible.length && <div className="p-4 text-center text-zinc-400">No differences.</div>}
       </div>
     </div>
   )

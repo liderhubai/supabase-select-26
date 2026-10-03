@@ -4,9 +4,9 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useAgents, useVersions } from '@/lib/api'
 import { ago } from '@/lib/utils'
-import { Card, Empty, PageHeader, Select, StatusBadge } from '@/components/ui'
+import { Card, Empty, Select, StatusBadge } from '@/components/ui'
 
-export default function VersionsPage() {
+export function VersionsSection() {
   const { data: agents } = useAgents()
   const [agentId, setAgentId] = useState('')
   const { data: versions } = useVersions(agentId || undefined)
@@ -17,24 +17,17 @@ export default function VersionsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Versões de prompt"
-        description="Versões em staging aguardam revisão: veja o diff, o motivo de cada mudança e a bateria de testes antes de promover."
-        actions={
-          <Select value={agentId} onChange={(e) => setAgentId(e.target.value)} className="w-56">
-            <option value="">Todos os agentes</option>
-            {agents?.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </Select>
-        }
-      />
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-t border-zinc-200 pt-8">
+        <div>
+          <h2 className="text-lg font-semibold">Prompt versions</h2>
+          <p className="text-sm text-zinc-500">Staging versions are awaiting review: check the diff, the reason for each change, and the test suite before promoting.</p>
+        </div>
+        <Select value={agentId} onValueChange={setAgentId} className="w-56" options={[{ value: '', label: 'All agents' }, ...(agents ?? []).map((a) => ({ value: a.id, label: a.name }))]} />
+      </div>
 
-      <h2 className="mb-2 text-sm font-medium text-zinc-500">Aguardando revisão</h2>
+      <h3 className="mb-2 text-sm font-medium text-zinc-500">Awaiting review</h3>
       {!staging.length ? (
-        <Empty>Nenhuma versão em staging.</Empty>
+        <Empty>No versions in staging.</Empty>
       ) : (
         <div className="mb-8 grid gap-3 md:grid-cols-2">
           {staging.map((v) => (
@@ -48,7 +41,7 @@ export default function VersionsPage() {
                 </div>
                 <p className="mt-1 text-sm text-zinc-600">{v.change_summary}</p>
                 <p className="mt-2 text-xs text-zinc-400">
-                  {v.changes.length} mudanças justificadas · {ago(v.created_at)}
+                  {v.changes.length} justified changes · {ago(v.created_at)}
                 </p>
               </Card>
             </Link>
@@ -56,7 +49,7 @@ export default function VersionsPage() {
         </div>
       )}
 
-      <h2 className="mb-2 mt-8 text-sm font-medium text-zinc-500">Histórico</h2>
+      <h3 className="mb-2 mt-8 text-sm font-medium text-zinc-500">History</h3>
       <Card>
         {others.map((v) => (
           <Link key={v.id} href={`/versions/${v.id}`} className="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-2.5 text-sm last:border-0 hover:bg-zinc-50">

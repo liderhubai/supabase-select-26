@@ -4,12 +4,12 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Agent Studio',
-  description: 'Simulação de atendimento, observabilidade e auto-melhoria de prompts.',
+  description: 'Customer-service simulation, observability, and prompt self-improvement.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className="h-full">
+    <html lang="en" className="h-full">
       <body className="h-full">
         <AppShell>{children}</AppShell>
       </body>

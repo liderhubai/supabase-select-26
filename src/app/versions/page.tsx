@@ -1,1 +1,5 @@
-export { default } from '@/views/VersionsPage'
+import { redirect } from 'next/navigation'
+
+export default function Page() {
+  redirect('/agents')
+}

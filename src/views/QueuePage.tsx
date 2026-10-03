@@ -61,23 +61,23 @@ export default function QueuePage() {
   return (
     <>
       <PageHeader
-        title="Fila de auto-melhoria"
-        description="Feedbacks dos revisores aguardando processamento. A IA consolida os feedbacks, reescreve o prompt com justificativas e roda a bateria de testes."
+        title="Self-improvement queue"
+        description="Reviewer feedback awaiting processing. The AI consolidates the feedback, rewrites the prompt with justifications, and runs the test suite."
       />
 
       <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
         <section className="space-y-4">
-          <h2 className="text-sm font-medium text-zinc-500">Pendentes ({feedbacks?.length ?? 0})</h2>
-          {!byAgent.length && <Empty>Nenhum feedback pendente. Dê feedback em conversas na aba Observabilidade.</Empty>}
+          <h2 className="text-sm font-medium text-zinc-500">Pending ({feedbacks?.length ?? 0})</h2>
+          {!byAgent.length && <Empty>No pending feedback. Leave feedback on conversations in the Observability tab.</Empty>}
           {byAgent.map(({ agent, items }) => (
             <AgentQueue key={agent.id} agent={agent} items={items} />
           ))}
         </section>
 
         <section>
-          <h2 className="mb-4 text-sm font-medium text-zinc-500">Processamentos</h2>
+          <h2 className="mb-4 text-sm font-medium text-zinc-500">Processing runs</h2>
           <div className="space-y-3">
-            {!jobs?.length && <Empty>Nenhum processamento ainda.</Empty>}
+            {!jobs?.length && <Empty>No processing runs yet.</Empty>}
             {jobs?.map((j) => (
               <JobCard key={j.id} job={j} />
             ))}
@@ -116,7 +116,7 @@ function AgentQueue({ agent, items }: { agent: Agent; items: FeedbackRow[] }) {
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 px-4 py-3">
         <div className="font-medium">{agent.name}</div>
         <Button onClick={() => optimize.mutate()} disabled={!ids.length || optimize.isPending}>
-          <Sparkles size={15} /> {optimize.isPending ? 'Enviando…' : `Processar ${ids.length} com IA`}
+          <Sparkles size={15} /> {optimize.isPending ? 'Sending…' : `Process ${ids.length} with AI`}
         </Button>
       </div>
       {optimize.error && <p className="px-4 pt-2 text-sm text-red-600">{optimize.error.message}</p>}
@@ -128,7 +128,7 @@ function AgentQueue({ agent, items }: { agent: Agent; items: FeedbackRow[] }) {
               <div className="flex flex-wrap items-center gap-2">
                 <span className={cn('flex items-center gap-1 font-medium', f.rating === 'positive' ? 'text-emerald-700' : 'text-red-700')}>
                   {f.rating === 'positive' ? <ThumbsUp size={13} /> : <ThumbsDown size={13} />}
-                  {f.rating === 'positive' ? 'Positivo' : 'Negativo'}
+                  {f.rating === 'positive' ? 'Positive' : 'Negative'}
                 </span>
                 <Badge tone="violet">v{f.prompt_versions.version}</Badge>
                 <span className="text-xs text-zinc-500">
@@ -141,7 +141,7 @@ function AgentQueue({ agent, items }: { agent: Agent; items: FeedbackRow[] }) {
               <p className="mt-1 line-clamp-2 text-zinc-500">“{f.messages.content}”</p>
               {f.comment && <p className="mt-1 text-zinc-800">{f.comment}</p>}
             </div>
-            <button className="self-start text-zinc-300 hover:text-zinc-600" title="Descartar" onClick={() => dismiss.mutate(f.id)}>
+            <button className="self-start text-zinc-300 hover:text-zinc-600" title="Dismiss" onClick={() => dismiss.mutate(f.id)}>
               <X size={15} />
             </button>
           </li>
@@ -161,7 +161,7 @@ function JobCard({ job }: { job: JobRow }) {
         <StatusBadge status={job.status} />
       </div>
       <div className="mt-1 text-xs text-zinc-500">
-        {job.feedback_ids.length} feedbacks · base v{job.base?.version} {job.candidate && <>→ candidata v{job.candidate.version}</>} · {ago(job.created_at)}
+        {job.feedback_ids.length} feedbacks · base v{job.base?.version} {job.candidate && <>→ candidate v{job.candidate.version}</>} · {ago(job.created_at)}
       </div>
       {(job.status === 'testing' || job.status === 'completed') && total > 0 && (
         <div className="mt-2">
@@ -169,7 +169,7 @@ function JobCard({ job }: { job: JobRow }) {
             <div className="h-full bg-sky-500 transition-all" style={{ width: `${(done / total) * 100}%` }} />
           </div>
           <div className="mt-1 text-xs text-zinc-500">
-            Bateria de testes: {done}/{total}
+            Test suite: {done}/{total}
           </div>
         </div>
       )}
@@ -178,7 +178,7 @@ function JobCard({ job }: { job: JobRow }) {
       {job.candidate_version_id && (
         <Link href={`/versions/${job.candidate_version_id}`}>
           <Button variant="secondary" className="mt-3 w-full">
-            Ver nova versão, diff e testes
+            View new version, diff and tests
           </Button>
         </Link>
       )}

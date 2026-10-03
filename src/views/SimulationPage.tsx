@@ -64,7 +64,7 @@ export default function SimulationPage() {
       unwrap(
         await supabase
           .from('conversations')
-          .insert({ agent_id: agentId, prompt_version_id: versionId, source: 'simulation', customer_label: `Cliente #${Math.floor(Math.random() * 9000 + 1000)}` })
+          .insert({ agent_id: agentId, prompt_version_id: versionId, source: 'simulation', customer_label: `Customer #${Math.floor(Math.random() * 9000 + 1000)}` })
           .select('id')
           .single(),
       ),
@@ -78,44 +78,36 @@ export default function SimulationPage() {
 
   return (
     <>
-      <PageHeader title="Simulação de atendimento" description="Converse com o agente como se fosse o cliente. Cada turno gera mensagem e trace no banco." />
+      <PageHeader title="Customer service simulation" description="Chat with the agent as if you were the customer. Each turn creates a message and a trace in the database." />
       {!agents?.length ? (
         <Empty>
-          Crie um agente primeiro em <Link href="/agents" className="underline">Agentes</Link>.
+          Create an agent first in <Link href="/agents" className="underline">Agents</Link>.
         </Empty>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
           <div className="space-y-4">
             <Card className="space-y-3 p-3">
               <div>
-                <Label>Agente</Label>
-                <Select value={agentId} onChange={(e) => update({ agent: e.target.value, v: null, c: null })}>
-                  {agents.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
-                    </option>
-                  ))}
-                </Select>
+                <Label>Agent</Label>
+                <Select value={agentId} onValueChange={(v) => update({ agent: v, v: null, c: null })} options={agents.map((a) => ({ value: a.id, label: a.name }))} />
               </div>
               <div>
-                <Label hint="padrão: produção">Versão do prompt</Label>
-                <Select value={versionId} onChange={(e) => update({ v: e.target.value, c: null })}>
-                  {versions
-                    ?.filter((v) => v.status !== 'archived' && v.status !== 'rejected')
-                    .map((v) => (
-                      <option key={v.id} value={v.id}>
-                        v{v.version} — {v.status}
-                      </option>
-                    ))}
-                </Select>
+                <Label hint="default: production">Prompt version</Label>
+                <Select
+                  value={versionId}
+                  onValueChange={(v) => update({ v, c: null })}
+                  options={(versions ?? [])
+                    .filter((v) => v.status !== 'archived' && v.status !== 'rejected')
+                    .map((v) => ({ value: v.id, label: `v${v.version} — ${v.status}` }))}
+                />
               </div>
               <Button className="w-full" onClick={() => create.mutate()} disabled={!versionId || create.isPending}>
-                <Plus size={15} /> Nova conversa
+                <Plus size={15} /> New conversation
               </Button>
             </Card>
 
             <Card className="max-h-[50vh] overflow-y-auto">
-              <div className="border-b border-zinc-100 px-3 py-2 text-xs font-medium text-zinc-500">Conversas recentes</div>
+              <div className="border-b border-zinc-100 px-3 py-2 text-xs font-medium text-zinc-500">Recent conversations</div>
               {conversations?.map((c) => (
                 <button
                   key={c.id}
@@ -128,7 +120,7 @@ export default function SimulationPage() {
                   </div>
                 </button>
               ))}
-              {conversations && !conversations.length && <p className="p-3 text-sm text-zinc-400">Nenhuma ainda.</p>}
+              {conversations && !conversations.length && <p className="p-3 text-sm text-zinc-400">None yet.</p>}
             </Card>
           </div>
 
@@ -141,20 +133,20 @@ export default function SimulationPage() {
                     {selectedVersion && <StatusBadge status={selectedVersion.status} />}
                   </div>
                   <Link href={`/observability/${conversationId}`} className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-900">
-                    <Activity size={13} /> ver na observabilidade
+                    <Activity size={13} /> view in observability
                   </Link>
                 </div>
                 <div className="min-h-0 flex-1">
                   <ChatPanel
                     key={conversationId}
-                    conversationId={conversationId}
+                    conversation={conversations?.find((c) => c.id === conversationId) ?? { id: conversationId, agent_id: agentId, prompt_version_id: versionId }}
                     initialMessages={messages}
                     onTurnEnd={() => qc.invalidateQueries({ queryKey: ['observability'] })}
                   />
                 </div>
               </>
             ) : (
-              <div className="m-auto text-sm text-zinc-400">Selecione ou crie uma conversa.</div>
+              <div className="m-auto text-sm text-zinc-400">Select or create a conversation.</div>
             )}
           </Card>
         </div>

@@ -4,15 +4,14 @@ import { useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Activity, Bot, GitCompare, ListChecks, MessagesSquare } from 'lucide-react'
+import { Activity, Bot, ListChecks, MessagesSquare } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const tabs = [
-  { href: '/agents', label: 'Agentes', icon: Bot },
-  { href: '/simulation', label: 'Simulação', icon: MessagesSquare },
-  { href: '/observability', label: 'Observabilidade', icon: Activity },
-  { href: '/queue', label: 'Fila de melhoria', icon: ListChecks },
-  { href: '/versions', label: 'Versões', icon: GitCompare },
+  { href: '/agents', label: 'Agents & Versions', icon: Bot },
+  { href: '/simulation', label: 'Simulation', icon: MessagesSquare },
+  { href: '/observability', label: 'Observability', icon: Activity },
+  { href: '/queue', label: 'Improvement Queue', icon: ListChecks },
 ]
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -21,31 +20,31 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex min-h-full flex-col">
-        <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/90 backdrop-blur">
-          <div className="mx-auto flex max-w-7xl items-center gap-6 px-4">
-            <div className="py-3 font-semibold tracking-tight">Agent Studio</div>
-            <nav className="-mb-px flex gap-1 overflow-x-auto">
+      <div className="flex min-h-full flex-col md:flex-row">
+        <aside className="border-b border-zinc-200 bg-white md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0 md:border-b-0 md:border-r">
+          <div className="flex h-full flex-col">
+            <div className="px-4 py-3 font-semibold tracking-tight md:px-5 md:py-5">Agent Studio</div>
+            <nav className="flex gap-1 overflow-x-auto px-2 pb-2 md:flex-col md:overflow-visible md:pb-0">
               {tabs.map(({ href, label, icon: Icon }) => {
-                const active = pathname === href || pathname.startsWith(`${href}/`)
+                const active = pathname === href || pathname.startsWith(`${href}/`) || (href === '/agents' && pathname.startsWith('/versions'))
                 return (
                   <Link
                     key={href}
                     href={href}
                     className={cn(
-                      'flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-3 text-sm',
-                      active ? 'border-zinc-900 font-medium text-zinc-900' : 'border-transparent text-zinc-500 hover:text-zinc-800',
+                      'flex items-center gap-2.5 whitespace-nowrap rounded-md px-3 py-2 text-sm',
+                      active ? 'bg-zinc-100 font-medium text-zinc-900' : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800',
                     )}
                   >
-                    <Icon size={15} />
+                    <Icon size={16} />
                     {label}
                   </Link>
                 )
               })}
             </nav>
           </div>
-        </header>
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">{children}</main>
+        </aside>
+        <main className="mx-auto w-full max-w-7xl min-w-0 flex-1 px-4 py-6 md:px-8">{children}</main>
       </div>
     </QueryClientProvider>
   )

@@ -1,6 +1,7 @@
-import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
+import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Select as UiSelect, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success'
 
@@ -33,7 +34,31 @@ const field = 'w-full rounded-md border border-zinc-200 bg-white px-3 py-1.5 tex
 
 export const Input = ({ className, ...p }: InputHTMLAttributes<HTMLInputElement>) => <input className={cn(field, className)} {...p} />
 export const Textarea = ({ className, ...p }: TextareaHTMLAttributes<HTMLTextAreaElement>) => <textarea className={cn(field, className)} {...p} />
-export const Select = ({ className, ...p }: SelectHTMLAttributes<HTMLSelectElement>) => <select className={cn(field, className)} {...p} />
+const EMPTY = '__empty__' // Radix Select does not allow an empty-string item value
+
+/** shadcn Select with a simple options API. An option with value '' is supported. */
+export function Select({ value, onValueChange, options, placeholder, className }: {
+  value: string
+  onValueChange: (value: string) => void
+  options: { value: string; label: ReactNode }[]
+  placeholder?: string
+  className?: string
+}) {
+  return (
+    <UiSelect value={value === '' ? EMPTY : value} onValueChange={(v) => onValueChange(v === EMPTY ? '' : v)}>
+      <SelectTrigger className={cn('w-full', className)}>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((o) => (
+          <SelectItem key={o.value || EMPTY} value={o.value || EMPTY}>
+            {o.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </UiSelect>
+  )
+}
 
 export function Label({ children, hint }: { children: ReactNode; hint?: string }) {
   return (
@@ -76,21 +101,21 @@ export const statusTone: Record<string, Tone> = {
 }
 
 export const statusLabel: Record<string, string> = {
-  production: 'produção',
+  production: 'production',
   staging: 'staging',
-  draft: 'rascunho',
-  archived: 'arquivada',
-  rejected: 'rejeitada',
-  pending: 'pendente',
-  processing: 'em processamento',
-  processed: 'processado',
-  dismissed: 'descartado',
-  queued: 'na fila',
-  optimizing: 'otimizando',
-  testing: 'testando',
-  running: 'rodando',
-  completed: 'concluído',
-  failed: 'falhou',
+  draft: 'draft',
+  archived: 'archived',
+  rejected: 'rejected',
+  pending: 'pending',
+  processing: 'processing',
+  processed: 'processed',
+  dismissed: 'dismissed',
+  queued: 'queued',
+  optimizing: 'optimizing',
+  testing: 'testing',
+  running: 'running',
+  completed: 'completed',
+  failed: 'failed',
 }
 
 export const StatusBadge = ({ status }: { status: string }) => <Badge tone={statusTone[status] ?? 'zinc'}>{statusLabel[status] ?? status}</Badge>
@@ -102,7 +127,7 @@ export function Modal({ open, onClose, title, children, wide }: { open: boolean;
       <div className={cn('w-full rounded-lg bg-white shadow-xl', wide ? 'max-w-4xl' : 'max-w-lg')} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3">
           <h3 className="font-semibold">{title}</h3>
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-700" aria-label="Fechar">
+          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-700" aria-label="Close">
             <X size={18} />
           </button>
         </div>

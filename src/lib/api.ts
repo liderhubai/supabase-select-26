@@ -6,7 +6,7 @@ import { supabase } from './supabase'
 import { unwrap } from './utils'
 import type { Agent, PromptVersion } from './types'
 
-/** POST para uma API route do próprio app (`/api/<name>`). */
+/** POST to one of the app's own API routes (`/api/<name>`). */
 export async function callApi<T>(name: string, body: unknown): Promise<T> {
   const res = await fetch(`/api/${name}`, {
     method: 'POST',
@@ -14,7 +14,7 @@ export async function callApi<T>(name: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
   })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.error ?? `Erro ${res.status} em ${name}`)
+  if (!res.ok) throw new Error(data.error ?? `Error ${res.status} in ${name}`)
   return data as T
 }
 
@@ -36,7 +36,7 @@ export function useVersions(agentId?: string) {
   })
 }
 
-/** Invalida queries quando uma tabela muda (Supabase Realtime). */
+/** Invalidates queries when a table changes (Supabase Realtime). */
 export function useRealtime(table: string, queryKeys: unknown[][]) {
   const qc = useQueryClient()
   const keys = JSON.stringify(queryKeys)

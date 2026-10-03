@@ -4,21 +4,23 @@ import { useState } from 'react'
 import { Markdown } from '@/components/Markdown'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Code2, ThumbsDown, ThumbsUp } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { ago, cn, unwrap } from '@/lib/utils'
 import type { Conversation, Execution, Feedback, Message, PromptVersion } from '@/lib/types'
-import { Badge, Button, Card, Input, Label, Modal, StatusBadge, Textarea } from '@/components/ui'
+import { FeedbackModal } from '@/components/FeedbackModal'
+import { Badge, Card, Label, Modal, StatusBadge } from '@/components/ui'
 
 type Detail = Conversation & { agents: { name: string; model: string }; prompt_versions: PromptVersion }
 
 const kindLabel: Record<Execution['kind'], string> = {
-  chat: 'agente',
-  test_agent: 'agente (teste)',
-  test_user: 'cliente simulado',
-  judge: 'juiz',
-  optimize: 'otimizador',
+  chat: 'agent',
+  test_agent: 'agent (test)',
+  test_user: 'simulated customer',
+  judge: 'judge',
+  confidence: 'confidence scorer',
+  optimize: 'optimizer',
 }
 
 export default function ConversationPage() {
@@ -50,7 +52,7 @@ export default function ConversationPage() {
   return (
     <>
       <Link href="/observability" className="mb-4 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900">
-        <ArrowLeft size={14} /> Observabilidade
+        <ArrowLeft size={14} /> Observability
       </Link>
       <div className="mb-5 flex flex-wrap items-center gap-2">
         <h1 className="text-xl font-semibold">{conv.customer_label}</h1>
@@ -59,19 +61,19 @@ export default function ConversationPage() {
           <Badge tone="violet">prompt v{conv.prompt_versions.version}</Badge>
         </Link>
         <StatusBadge status={conv.prompt_versions.status} />
-        {conv.source === 'test' && <Badge tone="blue">teste automático</Badge>}
+        {conv.source === 'test' && <Badge tone="blue">automated test</Badge>}
         <span className="text-sm text-zinc-500">{ago(conv.created_at)}</span>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
         <Card className="space-y-4 p-4">
-          <p className="text-xs text-zinc-500">Revise o diálogo e marque as respostas do agente com 👍 ou 👎. O feedback entra na fila de auto-melhoria.</p>
+          <p className="text-xs text-zinc-500">Review the dialogue and rate the agent's replies with 👍 or 👎. Feedback goes into the self-improvement queue.</p>
           {messages?.map((m) => {
             const fbs = feedbacks?.filter((f) => f.message_id === m.id) ?? []
             const exec = m.execution_id ? execById.get(m.execution_id) : undefined
             return (
               <div key={m.id} className={cn('flex flex-col', m.role === 'user' ? 'items-end' : 'items-start')}>
-                <div className="mb-1 text-[11px] uppercase tracking-wide text-zinc-400">{m.role === 'user' ? 'cliente' : 'agente'}</div>
+                <div className="mb-1 text-[11px] uppercase tracking-wide text-zinc-400">{m.role === 'user' ? 'customer' : 'agent'}</div>
                 <div
                   className={cn(
                     'max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed',
@@ -84,12 +86,17 @@ export default function ConversationPage() {
                 </div>
                 {m.role === 'assistant' && (
                   <div className="mt-1 flex items-center gap-1 text-zinc-400">
-                    <button className="rounded p-1 hover:bg-emerald-50 hover:text-emerald-700" title="Feedback positivo" onClick={() => setFeedbackFor({ message: m, rating: 'positive' })}>
+                    <button className="rounded p-1 hover:bg-emerald-50 hover:text-emerald-700" title="Positive feedback" onClick={() => setFeedbackFor({ message: m, rating: 'positive' })}>
                       <ThumbsUp size={14} />
                     </button>
-                    <button className="rounded p-1 hover:bg-red-50 hover:text-red-700" title="Feedback negativo" onClick={() => setFeedbackFor({ message: m, rating: 'negative' })}>
+                    <button className="rounded p-1 hover:bg-red-50 hover:text-red-700" title="Negative feedback" onClick={() => setFeedbackFor({ message: m, rating: 'negative' })}>
                       <ThumbsDown size={14} />
                     </button>
+                    {m.confidence != null && (
+                      <span className="ml-1 text-xs" title={m.confidence_reason ?? undefined}>
+                        confidence {m.confidence}%
+                      </span>
+                    )}
                     {exec && (
                       <button className="flex items-center gap-1 rounded p-1 text-xs hover:bg-zinc-100 hover:text-zinc-700" onClick={() => setTrace(exec)}>
                         <Code2 size={14} /> trace · {exec.latency_ms} ms · {(exec.input_tokens ?? 0) + (exec.output_tokens ?? 0)} tok
@@ -126,10 +133,10 @@ export default function ConversationPage() {
                 </span>
               </button>
             ))}
-            {executions && !executions.length && <p className="p-3 text-xs text-zinc-400">Sem traces.</p>}
+            {executions && !executions.length && <p className="p-3 text-xs text-zinc-400">No traces.</p>}
           </Card>
           <Card className="p-3">
-            <div className="mb-2 text-xs font-medium text-zinc-500">Prompt usado (v{conv.prompt_versions.version})</div>
+            <div className="mb-2 text-xs font-medium text-zinc-500">Prompt used (v{conv.prompt_versions.version})</div>
             <pre className="max-h-80 overflow-auto whitespace-pre-wrap text-xs text-zinc-700">{conv.prompt_versions.system_prompt}</pre>
           </Card>
         </div>
@@ -151,7 +158,7 @@ function TraceModal({ execution, onClose }: { execution: Execution | null; onClo
         <Badge>in {execution.input_tokens ?? '—'} tok</Badge>
         <Badge>out {execution.output_tokens ?? '—'} tok</Badge>
         {execution.finish_reason && <Badge>finish: {execution.finish_reason}</Badge>}
-        {execution.error && <Badge tone="red">erro</Badge>}
+        {execution.error && <Badge tone="red">error</Badge>}
       </div>
       {execution.error && <pre className="mb-3 whitespace-pre-wrap rounded bg-red-50 p-2 text-xs text-red-700">{execution.error}</pre>}
       <Label>Input · instructions</Label>
@@ -160,82 +167,6 @@ function TraceModal({ execution, onClose }: { execution: Execution | null; onClo
       <pre className="mb-3 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-zinc-50 p-2 text-xs">{JSON.stringify(execution.input.messages, null, 2)}</pre>
       <Label>Output</Label>
       <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded bg-zinc-50 p-2 text-xs">{execution.output}</pre>
-    </Modal>
-  )
-}
-
-function FeedbackModal({ conv, target, onClose }: { conv: Detail; target: { message: Message; rating: 'positive' | 'negative' }; onClose: () => void }) {
-  const qc = useQueryClient()
-  const [rating, setRating] = useState(target.rating)
-  const [comment, setComment] = useState('')
-  const [reviewer, setReviewer] = useState(() => {
-    try {
-      return localStorage.getItem('reviewer_name') ?? ''
-    } catch {
-      return ''
-    }
-  })
-
-  const save = useMutation({
-    mutationFn: async () => {
-      try {
-        localStorage.setItem('reviewer_name', reviewer)
-      } catch {
-        /* sem storage */
-      }
-      return unwrap(
-        await supabase.from('feedbacks').insert({
-          message_id: target.message.id,
-          conversation_id: conv.id,
-          execution_id: target.message.execution_id,
-          prompt_version_id: conv.prompt_version_id,
-          agent_id: conv.agent_id,
-          rating,
-          comment,
-          reviewer_name: reviewer || 'Revisor',
-        }),
-      )
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['feedbacks'] })
-      qc.invalidateQueries({ queryKey: ['observability'] })
-      onClose()
-    },
-  })
-
-  return (
-    <Modal open onClose={onClose} title="Feedback da mensagem">
-      <blockquote className="mb-3 max-h-40 overflow-auto rounded-md border-l-2 border-zinc-300 bg-zinc-50 p-2">
-        <Markdown>{target.message.content}</Markdown>
-      </blockquote>
-      <div className="mb-3 flex gap-2">
-        <Button variant={rating === 'positive' ? 'success' : 'secondary'} onClick={() => setRating('positive')}>
-          <ThumbsUp size={14} /> Positivo
-        </Button>
-        <Button variant={rating === 'negative' ? 'danger' : 'secondary'} onClick={() => setRating('negative')}>
-          <ThumbsDown size={14} /> Negativo
-        </Button>
-      </div>
-      <Label hint="o que deveria ter acontecido?">Contexto extra</Label>
-      <Textarea
-        rows={4}
-        value={comment}
-        onChange={(e) => setComment(e.target.value)}
-        placeholder={rating === 'negative' ? 'Ex.: deveria ter confirmado o convênio antes de oferecer horário.' : 'Ex.: ótima forma de contornar a objeção de preço.'}
-      />
-      <div className="mt-3">
-        <Label>Revisor</Label>
-        <Input value={reviewer} onChange={(e) => setReviewer(e.target.value)} placeholder="Seu nome" />
-      </div>
-      {save.error && <p className="mt-2 text-sm text-red-600">{save.error.message}</p>}
-      <div className="mt-4 flex justify-end gap-2">
-        <Button variant="ghost" onClick={onClose}>
-          Cancelar
-        </Button>
-        <Button onClick={() => save.mutate()} disabled={save.isPending}>
-          Enviar para a fila
-        </Button>
-      </div>
     </Modal>
   )
 }

@@ -9,18 +9,19 @@ import { useAgents, useVersions } from '@/lib/api'
 import { supabase } from '@/lib/supabase'
 import { unwrap } from '@/lib/utils'
 import type { Agent, TestCase } from '@/lib/types'
+import { VersionsSection } from '@/views/VersionsPage'
 import { Badge, Button, Card, Empty, Input, Label, Modal, PageHeader, Select, StatusBadge, Textarea } from '@/components/ui'
 
 const MODELS = [
-  { id: 'claude-opus-5-5', label: 'Claude Opus 5.5' },
   { id: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5' },
+  { id: 'claude-opus-5-5', label: 'Claude Opus 5.5' },
 ]
 
 const KINDS = [
-  { id: 'recepcao', label: 'Recepção' },
-  { id: 'comercial', label: 'Comercial' },
-  { id: 'suporte', label: 'Suporte' },
-  { id: 'outro', label: 'Outro' },
+  { id: 'recepcao', label: 'Reception' },
+  { id: 'comercial', label: 'Sales' },
+  { id: 'suporte', label: 'Support' },
+  { id: 'outro', label: 'Other' },
 ]
 
 export default function AgentsPage() {
@@ -30,16 +31,16 @@ export default function AgentsPage() {
   return (
     <>
       <PageHeader
-        title="Agentes"
-        description="Crie agentes de atendimento e gerencie o prompt em produção e a bateria de testes de cada um."
+        title="Agents"
+        description="Create customer service agents and manage each one's production prompt and test suite."
         actions={
           <Button onClick={() => setCreating(true)}>
-            <Plus size={15} /> Novo agente
+            <Plus size={15} /> New agent
           </Button>
         }
       />
       {isLoading ? null : !agents?.length ? (
-        <Empty>Nenhum agente ainda. Crie o primeiro.</Empty>
+        <Empty>No agents yet. Create the first one.</Empty>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {agents.map((a) => (
@@ -47,6 +48,7 @@ export default function AgentsPage() {
           ))}
         </div>
       )}
+      <VersionsSection />
       <CreateAgentModal open={creating} onClose={() => setCreating(false)} />
     </>
   )
@@ -70,15 +72,15 @@ function AgentCard({ agent }: { agent: Agent }) {
         </div>
         <Link href={`/simulation?agent=${agent.id}`}>
           <Button variant="secondary">
-            <MessagesSquare size={15} /> Simular
+            <MessagesSquare size={15} /> Simulate
           </Button>
         </Link>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
         <span>{MODELS.find((m) => m.id === agent.model)?.label ?? agent.model}</span>·
-        {production && <span>v{production.version} em produção</span>}·
-        <span>{versions?.length ?? 0} versões</span>
+        {production && <span>v{production.version} in production</span>}·
+        <span>{versions?.length ?? 0} versions</span>
       </div>
 
       {production && (
@@ -89,10 +91,10 @@ function AgentCard({ agent }: { agent: Agent }) {
 
       <div className="mt-3 flex flex-wrap gap-2">
         <Button variant="secondary" onClick={() => setEditing(true)}>
-          <Pencil size={14} /> Editar prompt
+          <Pencil size={14} /> Edit prompt
         </Button>
         <Button variant="ghost" onClick={() => setShowTests(true)}>
-          Bateria de testes
+          Test suite
         </Button>
         {versions
           ?.filter((v) => v.status === 'staging' || v.status === 'draft')
@@ -138,48 +140,36 @@ function CreateAgentModal({ open, onClose }: { open: boolean; onClose: () => voi
   })
 
   return (
-    <Modal open={open} onClose={onClose} title="Novo agente" wide>
+    <Modal open={open} onClose={onClose} title="New agent" wide>
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="sm:col-span-1">
-          <Label>Nome</Label>
-          <Input value={form.name} onChange={set('name')} placeholder="Recepção — Clínica X" />
+          <Label>Name</Label>
+          <Input value={form.name} onChange={set('name')} placeholder="Reception — Clinic X" />
         </div>
         <div>
-          <Label>Tipo</Label>
-          <Select value={form.kind} onChange={set('kind')}>
-            {KINDS.map((k) => (
-              <option key={k.id} value={k.id}>
-                {k.label}
-              </option>
-            ))}
-          </Select>
+          <Label>Type</Label>
+          <Select value={form.kind} onValueChange={(v) => setForm({ ...form, kind: v })} options={KINDS.map((k) => ({ value: k.id, label: k.label }))} />
         </div>
         <div>
-          <Label>Modelo</Label>
-          <Select value={form.model} onChange={set('model')}>
-            {MODELS.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.label}
-              </option>
-            ))}
-          </Select>
+          <Label>Model</Label>
+          <Select value={form.model} onValueChange={(v) => setForm({ ...form, model: v })} options={MODELS.map((m) => ({ value: m.id, label: m.label }))} />
         </div>
         <div className="sm:col-span-3">
-          <Label>Descrição</Label>
-          <Input value={form.description} onChange={set('description')} placeholder="O que esse agente faz" />
+          <Label>Description</Label>
+          <Input value={form.description} onChange={set('description')} placeholder="What this agent does" />
         </div>
         <div className="sm:col-span-3">
-          <Label hint="vira a v1 em produção">Prompt de sistema</Label>
+          <Label hint="becomes v1 in production">System prompt</Label>
           <Textarea rows={12} value={form.prompt} onChange={set('prompt')} className="font-mono text-xs" />
         </div>
       </div>
       {create.error && <p className="mt-3 text-sm text-red-600">{create.error.message}</p>}
       <div className="mt-4 flex justify-end gap-2">
         <Button variant="ghost" onClick={onClose}>
-          Cancelar
+          Cancel
         </Button>
         <Button disabled={!form.name || !form.prompt || create.isPending} onClick={() => create.mutate()}>
-          Criar agente
+          Create agent
         </Button>
       </div>
     </Modal>
@@ -203,20 +193,20 @@ function EditPromptModal({ open, onClose, agentId, initial }: { open: boolean; o
   })
 
   return (
-    <Modal open={open} onClose={onClose} title="Editar prompt (nova versão em rascunho)" wide>
-      <Label>Prompt de sistema</Label>
+    <Modal open={open} onClose={onClose} title="Edit prompt (new draft version)" wide>
+      <Label>System prompt</Label>
       <Textarea rows={16} value={prompt} onChange={(e) => setPrompt(e.target.value)} className="font-mono text-xs" />
       <div className="mt-3">
-        <Label>Resumo da mudança</Label>
-        <Input value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Ex.: reforça confirmação de dados antes de agendar" />
+        <Label>Change summary</Label>
+        <Input value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="E.g.: reinforce data confirmation before scheduling" />
       </div>
-      <p className="mt-2 text-xs text-zinc-500">A nova versão não vai direto para produção: você verá o diff e poderá rodar a bateria de testes antes de promover.</p>
+      <p className="mt-2 text-xs text-zinc-500">The new version does not go straight to production: you will see the diff and can run the test suite before promoting.</p>
       <div className="mt-4 flex justify-end gap-2">
         <Button variant="ghost" onClick={onClose}>
-          Cancelar
+          Cancel
         </Button>
         <Button disabled={prompt === initial || save.isPending} onClick={() => save.mutate()}>
-          Criar versão
+          Create version
         </Button>
       </div>
     </Modal>
@@ -247,9 +237,9 @@ function TestCasesModal({ open, onClose, agentId }: { open: boolean; onClose: ()
   })
 
   return (
-    <Modal open={open} onClose={onClose} title="Bateria de testes" wide>
+    <Modal open={open} onClose={onClose} title="Test suite" wide>
       <p className="mb-3 text-sm text-zinc-500">
-        Casos simulados por um cliente-IA e avaliados por um juiz-IA. A fila de melhoria também gera casos novos a partir dos feedbacks.
+        Cases simulated by an AI customer and graded by an AI judge. The improvement queue also generates new cases from feedback.
       </p>
       <div className="space-y-2">
         {cases?.map((c) => (
@@ -258,7 +248,7 @@ function TestCasesModal({ open, onClose, agentId }: { open: boolean; onClose: ()
               <div className="flex items-center gap-2 font-medium">
                 {c.name} <Badge tone={c.origin === 'feedback' ? 'amber' : 'zinc'}>{c.origin}</Badge>
               </div>
-              <button className="text-zinc-400 hover:text-red-600" onClick={() => remove.mutate(c.id)} aria-label="Remover">
+              <button className="text-zinc-400 hover:text-red-600" onClick={() => remove.mutate(c.id)} aria-label="Remove">
                 <Trash2 size={14} />
               </button>
             </div>
@@ -266,28 +256,28 @@ function TestCasesModal({ open, onClose, agentId }: { open: boolean; onClose: ()
               <b>Persona:</b> {c.persona}
             </p>
             <p className="text-zinc-600">
-              <b>Cenário:</b> {c.scenario}
+              <b>Scenario:</b> {c.scenario}
             </p>
             <p className="text-zinc-600">
-              <b>Esperado:</b> {c.expected_behavior}
+              <b>Expected:</b> {c.expected_behavior}
             </p>
           </div>
         ))}
-        {cases && !cases.length && <Empty>Nenhum caso ainda.</Empty>}
+        {cases && !cases.length && <Empty>No cases yet.</Empty>}
       </div>
       <div className="mt-4 grid gap-2 border-t border-zinc-100 pt-4">
-        <Input placeholder="Nome do caso" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <Input placeholder="Persona do cliente" value={form.persona} onChange={(e) => setForm({ ...form, persona: e.target.value })} />
-        <Textarea rows={2} placeholder="Cenário" value={form.scenario} onChange={(e) => setForm({ ...form, scenario: e.target.value })} />
+        <Input placeholder="Case name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <Input placeholder="Customer persona" value={form.persona} onChange={(e) => setForm({ ...form, persona: e.target.value })} />
+        <Textarea rows={2} placeholder="Scenario" value={form.scenario} onChange={(e) => setForm({ ...form, scenario: e.target.value })} />
         <Textarea
           rows={2}
-          placeholder="Comportamento esperado (critérios)"
+          placeholder="Expected behavior (criteria)"
           value={form.expected_behavior}
           onChange={(e) => setForm({ ...form, expected_behavior: e.target.value })}
         />
         <div className="flex justify-end">
           <Button disabled={!form.name || !form.scenario || !form.expected_behavior || add.isPending} onClick={() => add.mutate()}>
-            <Plus size={14} /> Adicionar caso
+            <Plus size={14} /> Add case
           </Button>
         </div>
       </div>

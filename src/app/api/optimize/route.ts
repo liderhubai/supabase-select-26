@@ -1,17 +1,17 @@
-// Fila de auto-melhoria: cria o job e processa em background (reflexão + bateria de testes).
+// Self-improvement queue: creates the job and processes it in the background (reflection + test suite).
 import { after } from 'next/server'
 import { db, must } from '@/lib/server/db'
 import { runOptimization } from '@/lib/server/optimize'
 
-// Reflexão + bateria de testes rodam após a resposta, dentro do limite desta rota.
+// Reflection + test suite run after the response, within this route's limit.
 export const maxDuration = 800
 
 export async function POST(req: Request) {
   const { agentId, feedbackIds } = (await req.json()) as { agentId: string; feedbackIds: string[] }
-  if (!agentId || !feedbackIds?.length) return Response.json({ error: 'agentId e feedbackIds são obrigatórios' }, { status: 400 })
+  if (!agentId || !feedbackIds?.length) return Response.json({ error: 'agentId and feedbackIds are required' }, { status: 400 })
 
-  const agent = must(await db.from('agents').select('id, production_version_id').eq('id', agentId).single(), 'agente')
-  if (!agent.production_version_id) return Response.json({ error: 'Agente sem versão em produção' }, { status: 400 })
+  const agent = must(await db.from('agents').select('id, production_version_id').eq('id', agentId).single(), 'agent')
+  if (!agent.production_version_id) return Response.json({ error: 'Agent has no production version' }, { status: 400 })
 
   const job = must(
     await db

@@ -2,7 +2,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { cn } from '@/lib/utils'
 
-/** Renderiza mensagens do chat em markdown (negrito, listas, tabelas, links, código). */
+/** Renders chat messages as markdown (bold, lists, tables, links, code). */
 export function Markdown({ children, invert, className }: { children: string; invert?: boolean; className?: string }) {
   return (
     <div

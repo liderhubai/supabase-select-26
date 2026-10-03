@@ -18,7 +18,7 @@ type Row = Conversation & {
   feedbacks: { rating: 'positive' | 'negative' }[]
 }
 
-const fmt = (n: number) => n.toLocaleString('pt-BR')
+const fmt = (n: number) => n.toLocaleString('en-US')
 
 export default function ObservabilityPage() {
   const router = useRouter()
@@ -63,50 +63,48 @@ export default function ObservabilityPage() {
   return (
     <>
       <PageHeader
-        title="Observabilidade"
-        description="Todas as conversas, com traces de cada chamada de IA. Clique para revisar e dar feedback nas mensagens."
+        title="Observability"
+        description="All conversations, with traces for every AI call. Click to review and leave feedback on messages."
         actions={
           <>
-            <Select value={agentId} onChange={(e) => setAgentId(e.target.value)} className="w-56">
-              <option value="">Todos os agentes</option>
-              {agents?.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </Select>
-            <Select value={source} onChange={(e) => setSource(e.target.value as typeof source)} className="w-40">
-              <option value="simulation">Simulações</option>
-              <option value="test">Testes automáticos</option>
-              <option value="all">Tudo</option>
-            </Select>
+            <Select value={agentId} onValueChange={setAgentId} className="w-56" options={[{ value: '', label: 'All agents' }, ...(agents ?? []).map((a) => ({ value: a.id, label: a.name }))]} />
+            <Select
+              value={source}
+              onValueChange={(v) => setSource(v as typeof source)}
+              className="w-40"
+              options={[
+                { value: 'simulation', label: 'Simulations' },
+                { value: 'test', label: 'Automated tests' },
+                { value: 'all', label: 'All' },
+              ]}
+            />
           </>
         }
       />
 
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-5">
-        <Kpi label="Conversas" value={fmt(rows?.length ?? 0)} />
+        <Kpi label="Conversations" value={fmt(rows?.length ?? 0)} />
         <Kpi label="Tokens" value={fmt(stats.tokens)} />
-        <Kpi label="Latência média" value={stats.calls ? `${fmt(Math.round(stats.latency / stats.calls))} ms` : '—'} />
-        <Kpi label="Erros" value={fmt(stats.errors)} />
+        <Kpi label="Average latency" value={stats.calls ? `${fmt(Math.round(stats.latency / stats.calls))} ms` : '—'} />
+        <Kpi label="Errors" value={fmt(stats.errors)} />
         <Kpi label="Feedbacks" value={`${stats.pos} 👍 · ${stats.neg} 👎`} />
       </div>
 
       {isLoading ? null : !rows?.length ? (
-        <Empty>Nenhuma conversa ainda. Faça uma simulação.</Empty>
+        <Empty>No conversations yet. Run a simulation.</Empty>
       ) : (
         <Card className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b border-zinc-200 text-left text-xs text-zinc-500">
               <tr>
-                <th className="px-3 py-2 font-medium">Conversa</th>
-                <th className="px-3 py-2 font-medium">Agente</th>
-                <th className="px-3 py-2 font-medium">Versão</th>
+                <th className="px-3 py-2 font-medium">Conversation</th>
+                <th className="px-3 py-2 font-medium">Agent</th>
+                <th className="px-3 py-2 font-medium">Version</th>
                 <th className="px-3 py-2 text-right font-medium">Msgs</th>
                 <th className="px-3 py-2 text-right font-medium">Tokens</th>
-                <th className="px-3 py-2 text-right font-medium">Latência média</th>
+                <th className="px-3 py-2 text-right font-medium">Average latency</th>
                 <th className="px-3 py-2 font-medium">Feedback</th>
-                <th className="px-3 py-2 font-medium">Quando</th>
+                <th className="px-3 py-2 font-medium">When</th>
               </tr>
             </thead>
             <tbody>
@@ -122,8 +120,8 @@ export default function ObservabilityPage() {
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2 font-medium">
                         {r.customer_label}
-                        {r.source === 'test' && <Badge tone="blue">teste</Badge>}
-                        {hasError && <Badge tone="red">erro</Badge>}
+                        {r.source === 'test' && <Badge tone="blue">test</Badge>}
+                        {hasError && <Badge tone="red">error</Badge>}
                       </div>
                     </td>
                     <td className="px-3 py-2 text-zinc-600">{r.agents.name}</td>

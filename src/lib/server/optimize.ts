@@ -3,14 +3,14 @@ import { z } from 'zod';
 import { OPTIMIZER_MODEL, tracedObject } from './ai';
 import { db, must } from './db';
 import { runTests } from './run-test';
-// Auto-melhoria (reflexão estilo GEPA): consolida feedbacks anotados sobre conversas reais,
-// pede ao otimizador um novo prompt com justificativa por mudança, gera a bateria de testes
-// e dispara os test runs (baseline = produção x candidate = staging).
+// Self-improvement (GEPA-style reflection): consolidates annotated feedback on real conversations,
+// asks the optimizer for a new prompt with a justification per change, generates the test suite
+// and triggers the test runs (baseline = production vs. candidate = staging).
 
 const MAX_TEST_CASES = 6;
 
 const reflectionSchema = z.object({
-  diagnosis: z.string().describe('Diagnóstico geral: o que o agente faz bem e onde falha, com base nos feedbacks.'),
+  diagnosis: z.string().describe('Overall diagnosis: what the agent does well and where it fails, based on the feedback.'),
   patterns: z
     .array(
       z.object({
@@ -19,29 +19,29 @@ const reflectionSchema = z.object({
         feedback_ids: z.array(z.string()),
       }),
     )
-    .describe('Padrões recorrentes encontrados nos feedbacks.'),
-  new_system_prompt: z.string().describe('O prompt de sistema completo e melhorado.'),
-  change_summary: z.string().describe('Resumo curto (1-2 frases) da nova versão.'),
+    .describe('Recurring patterns found in the feedback.'),
+  new_system_prompt: z.string().describe('The complete, improved system prompt.'),
+  change_summary: z.string().describe('Short summary (1-2 sentences) of the new version.'),
   changes: z
     .array(
       z.object({
-        title: z.string().describe('Nome curto da mudança.'),
-        before: z.string().describe('Trecho do prompt antigo afetado (vazio se for adição).'),
-        after: z.string().describe('Trecho novo (vazio se for remoção).'),
-        reason: z.string().describe('Por que a mudança foi feita, citando o comportamento observado.'),
-        feedback_ids: z.array(z.string()).describe('IDs dos feedbacks que justificam a mudança.'),
+        title: z.string().describe('Short name of the change.'),
+        before: z.string().describe('Affected excerpt of the old prompt (empty if it is an addition).'),
+        after: z.string().describe('New excerpt (empty if it is a removal).'),
+        reason: z.string().describe('Why the change was made, citing the observed behavior.'),
+        feedback_ids: z.array(z.string()).describe('IDs of the feedback items that justify the change.'),
       }),
     )
-    .describe('Lista de mudanças, cada uma justificada por feedbacks.'),
+    .describe('List of changes, each justified by feedback.'),
 });
 
 const testCasesSchema = z.object({
   test_cases: z.array(
     z.object({
       name: z.string(),
-      persona: z.string().describe('Quem é o cliente simulado, tom e contexto.'),
-      scenario: z.string().describe('O que o cliente quer e como a conversa deve se desenrolar.'),
-      expected_behavior: z.string().describe('Critérios objetivos que o agente deve cumprir para passar.'),
+      persona: z.string().describe('Who the simulated customer is, tone and context.'),
+      scenario: z.string().describe('What the customer wants and how the conversation should unfold.'),
+      expected_behavior: z.string().describe('Objective criteria the agent must meet to pass.'),
       origin: z.enum(['feedback', 'generated']),
       max_turns: z.number().int().min(2).max(6),
     }),
@@ -67,24 +67,24 @@ async function annotatedTraces(feedbacks: FeedbackRow[]) {
       .select('id, conversation_id, role, content, created_at')
       .in('conversation_id', convIds)
       .order('created_at'),
-    'mensagens',
+    'messages',
   );
 
   return feedbacks
     .map((f) => {
       const conv = msgs.filter((m) => m.conversation_id === f.conversation_id);
       const idx = conv.findIndex((m) => m.id === f.message_id);
-      // Contexto: até 6 mensagens antes da mensagem avaliada.
+      // Context: up to 6 messages before the evaluated message.
       const window = conv.slice(Math.max(0, idx - 6), idx + 1);
       const transcript = window
-        .map((m) => `${m.id === f.message_id ? '>>> ' : ''}[${m.role === 'user' ? 'CLIENTE' : 'AGENTE'}] ${m.content}`)
+        .map((m) => `${m.id === f.message_id ? '>>> ' : ''}[${m.role === 'user' ? 'CUSTOMER' : 'AGENT'}] ${m.content}`)
         .join('\n');
       return `<feedback id="${f.id}" rating="${f.rating}" prompt_version="v${f.prompt_versions.version}" reviewer="${f.reviewer_name}">
-<conversa>
+<conversation>
 ${transcript}
-</conversa>
-<mensagem_avaliada>a linha marcada com >>></mensagem_avaliada>
-<comentario_do_revisor>${f.comment || '(sem comentário)'}</comentario_do_revisor>
+</conversation>
+<evaluated_message>the line marked with >>></evaluated_message>
+<reviewer_comment>${f.comment || '(no comment)'}</reviewer_comment>
 </feedback>`;
     })
     .join('\n\n');
@@ -92,8 +92,8 @@ ${transcript}
 
 export async function runOptimization(jobId: string) {
   const job = must(await db.from('optimization_jobs').select('*').eq('id', jobId).single(), 'job');
-  const agent = must(await db.from('agents').select('*').eq('id', job.agent_id).single(), 'agente');
-  const base = must(await db.from('prompt_versions').select('*').eq('id', job.base_version_id).single(), 'versão base');
+  const agent = must(await db.from('agents').select('*').eq('id', job.agent_id).single(), 'agent');
+  const base = must(await db.from('prompt_versions').select('*').eq('id', job.base_version_id).single(), 'base version');
   const feedbacks = must(
     await db
       .from('feedbacks')
@@ -105,37 +105,37 @@ export async function runOptimization(jobId: string) {
   await db.from('optimization_jobs').update({ status: 'optimizing' }).eq('id', jobId);
   const traces = await annotatedTraces(feedbacks);
 
-  // 1) Reflexão: diagnostica e propõe novo prompt com justificativas.
+  // 1) Reflection: diagnoses and proposes a new prompt with justifications.
   const reflection = await tracedObject({
     kind: 'optimize',
     promptVersionId: base.id,
     model: OPTIMIZER_MODEL,
     effort: 'high',
     schema: reflectionSchema,
-    instructions: `Você é um engenheiro de prompts especialista em agentes de atendimento.
-Você recebe o prompt de sistema atual de um agente e feedbacks humanos (positivos e negativos) sobre mensagens reais que ele enviou.
-Seu trabalho é reflexivo, no estilo GEPA: leia cada conversa, entenda por que a mensagem foi bem ou mal avaliada, encontre padrões, e reescreva o prompt para corrigir as falhas sem perder o que funciona.
+    instructions: `You are a prompt engineer specialized in customer service agents.
+You receive an agent's current system prompt and human feedback (positive and negative) on real messages it sent.
+Your work is reflective, GEPA-style: read each conversation, understand why the message was rated well or poorly, find patterns, and rewrite the prompt to fix the failures without losing what works.
 
-Regras:
-- Preserve fatos do negócio (preços, horários, políticas) a menos que um feedback diga explicitamente que estão errados.
-- Prefira instruções gerais que corrijam a classe de erro, não remendos para uma única conversa.
-- Feedbacks positivos indicam comportamentos que devem ser mantidos ou reforçados.
-- Cada mudança deve citar os IDs dos feedbacks que a motivaram.
-- Escreva o prompt novo no mesmo idioma do original.`,
-    prompt: `<agente nome="${agent.name}" tipo="${agent.kind}">${agent.description}</agente>
+Rules:
+- Preserve business facts (prices, hours, policies) unless a feedback item explicitly says they are wrong.
+- Prefer general instructions that fix the class of error, not patches for a single conversation.
+- Positive feedback indicates behaviors that should be kept or reinforced.
+- Each change must cite the IDs of the feedback items that motivated it.
+- Write the new prompt in the same language as the original.`,
+    prompt: `<agent name="${agent.name}" type="${agent.kind}">${agent.description}</agent>
 
-<prompt_atual versao="v${base.version}">
+<current_prompt version="v${base.version}">
 ${base.system_prompt}
-</prompt_atual>
+</current_prompt>
 
 <feedbacks>
 ${traces}
 </feedbacks>
 
-Produza o diagnóstico, os padrões, o novo prompt completo e a lista de mudanças justificadas.`,
+Produce the diagnosis, the patterns, the complete new prompt and the list of justified changes.`,
   });
 
-  // 2) Nova versão em staging.
+  // 2) New version in staging.
   const { data: last } = await db
     .from('prompt_versions')
     .select('version')
@@ -158,7 +158,7 @@ Produza o diagnóstico, os padrões, o novo prompt completo e a lista de mudanç
       })
       .select('*')
       .single(),
-    'versão candidata',
+    'candidate version',
   );
 
   await db
@@ -170,10 +170,10 @@ Produza o diagnóstico, os padrões, o novo prompt completo e a lista de mudanç
     })
     .eq('id', jobId);
 
-  // 3) Bateria de testes: casos derivados dos feedbacks + casos genéricos do tipo de agente.
+  // 3) Test suite: cases derived from the feedback + generic cases for this type of agent.
   const existing = must(
     await db.from('test_cases').select('id, name, origin').eq('agent_id', agent.id).order('created_at'),
-    'casos de teste',
+    'test cases',
   );
   const generated = await tracedObject({
     kind: 'optimize',
@@ -181,20 +181,20 @@ Produza o diagnóstico, os padrões, o novo prompt completo e a lista de mudanç
     model: OPTIMIZER_MODEL,
     effort: 'medium',
     schema: testCasesSchema,
-    instructions: `Você cria casos de teste para simular atendimentos e avaliar um agente.
-Cada caso descreve um cliente simulado (persona), o cenário da conversa e critérios objetivos de sucesso.`,
-    prompt: `<agente nome="${agent.name}" tipo="${agent.kind}">${agent.description}</agente>
-<prompt_do_agente>
+    instructions: `You create test cases to simulate customer conversations and evaluate an agent.
+Each case describes a simulated customer (persona), the conversation scenario and objective success criteria.`,
+    prompt: `<agent name="${agent.name}" type="${agent.kind}">${agent.description}</agent>
+<agent_prompt>
 ${reflection.new_system_prompt}
-</prompt_do_agente>
+</agent_prompt>
 <feedbacks>
 ${traces}
 </feedbacks>
-<casos_existentes>${existing.map((t) => t.name).join('; ') || '(nenhum)'}</casos_existentes>
+<existing_cases>${existing.map((t) => t.name).join('; ') || '(none)'}</existing_cases>
 
-Crie um caso de teste (origin="feedback") para cada situação problemática nos feedbacks negativos que ainda não esteja coberta pelos casos existentes.
-${existing.length < 3 ? `Crie também ${3 - existing.length} casos genéricos (origin="generated") cobrindo o fluxo principal do agente.` : ''}
-No máximo ${MAX_TEST_CASES} casos novos. Não repita casos existentes.`,
+Create a test case (origin="feedback") for each problematic situation in the negative feedback that is not yet covered by the existing cases.
+${existing.length < 3 ? `Also create ${3 - existing.length} generic cases (origin="generated") covering the agent's main flow.` : ''}
+At most ${MAX_TEST_CASES} new cases. Do not repeat existing cases.`,
   });
 
   if (generated.test_cases.length) {
@@ -203,17 +203,17 @@ No máximo ${MAX_TEST_CASES} casos novos. Não repita casos existentes.`,
         .from('test_cases')
         .insert(generated.test_cases.slice(0, MAX_TEST_CASES).map((t) => ({ ...t, agent_id: agent.id })))
         .select('id'),
-      'inserir casos de teste',
+      'insert test cases',
     );
   }
 
-  // Casos mais recentes primeiro (os vindos destes feedbacks), limitado para caber no orçamento.
+  // Most recent cases first (the ones coming from this feedback), limited to fit the budget.
   const cases = must(
     await db.from('test_cases').select('id').eq('agent_id', agent.id).order('created_at', { ascending: false }).limit(MAX_TEST_CASES),
-    'casos de teste',
+    'test cases',
   );
 
-  // 4) Test runs: mesma bateria na produção atual (baseline) e na candidata.
+  // 4) Test runs: the same suite on current production (baseline) and on the candidate.
   const runs = must(
     await db
       .from('test_runs')

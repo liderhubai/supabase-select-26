@@ -47,6 +47,8 @@ export interface Message {
   role: 'user' | 'assistant'
   content: string
   execution_id: string | null
+  confidence: number | null
+  confidence_reason: string | null
   created_at: string
 }
 
@@ -54,7 +56,7 @@ export interface Execution {
   id: string
   conversation_id: string | null
   prompt_version_id: string | null
-  kind: 'chat' | 'optimize' | 'test_user' | 'test_agent' | 'judge'
+  kind: 'chat' | 'optimize' | 'test_user' | 'test_agent' | 'judge' | 'confidence'
   model: string
   input: { instructions: string; messages: { role: string; content: string }[] }
   output: string | null

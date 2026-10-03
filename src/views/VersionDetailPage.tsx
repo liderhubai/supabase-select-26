@@ -33,7 +33,7 @@ export default function VersionDetailPage() {
     queryFn: async () => unwrap(await supabase.from('optimization_jobs').select('*').eq('id', version!.optimization_job_id!).single()) as OptimizationJob,
   })
 
-  // Base de comparação: a versão de produção (ou a versão-pai, se esta já for a produção).
+  // Comparison base: the production version (or the parent version, if this one is already production).
   const defaultBaseId = version?.status === 'production' || !agent?.production_version_id ? version?.parent_version_id : agent.production_version_id
   const [compareId, setCompareId] = useState<string | null>(null)
   const baseId = compareId ?? defaultBaseId ?? null
@@ -53,8 +53,8 @@ export default function VersionDetailPage() {
 
   return (
     <>
-      <Link href="/versions" className="mb-4 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900">
-        <ArrowLeft size={14} /> Versões
+      <Link href="/agents" className="mb-4 inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900">
+        <ArrowLeft size={14} /> Agents and versions
       </Link>
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -67,21 +67,21 @@ export default function VersionDetailPage() {
           </div>
           <p className="mt-1 max-w-3xl text-sm text-zinc-600">{version.change_summary}</p>
           <p className="mt-1 text-xs text-zinc-400">
-            criada {ago(version.created_at)}
-            {version.promoted_at && <> · promovida {ago(version.promoted_at)}</>}
+            created {ago(version.created_at)}
+            {version.promoted_at && <> · promoted {ago(version.promoted_at)}</>}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" onClick={() => router.push(`/simulation?agent=${version.agent_id}&v=${version.id}`)}>
-            <MessagesSquare size={15} /> Testar no simulador
+            <MessagesSquare size={15} /> Test in simulator
           </Button>
           {canDecide && (
             <>
               <Button variant="secondary" onClick={() => reject.mutate()} disabled={reject.isPending}>
-                <X size={15} /> Rejeitar
+                <X size={15} /> Reject
               </Button>
               <Button variant="success" onClick={() => promote.mutate()} disabled={promote.isPending}>
-                <Rocket size={15} /> Promover para produção
+                <Rocket size={15} /> Promote to production
               </Button>
             </>
           )}
@@ -94,18 +94,15 @@ export default function VersionDetailPage() {
 
         <section>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="font-semibold">Diff do prompt</h2>
+            <h2 className="font-semibold">Prompt diff</h2>
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-zinc-500">comparar com</span>
-              <Select value={baseId ?? ''} onChange={(e) => setCompareId(e.target.value)} className="w-48">
-                {siblings
-                  ?.filter((v) => v.id !== version.id)
-                  .map((v) => (
-                    <option key={v.id} value={v.id}>
-                      v{v.version} ({v.status})
-                    </option>
-                  ))}
-              </Select>
+              <span className="text-zinc-500">compare with</span>
+              <Select
+                value={baseId ?? ''}
+                onValueChange={setCompareId}
+                className="w-48"
+                options={(siblings ?? []).filter((v) => v.id !== version.id).map((v) => ({ value: v.id, label: `v${v.version} (${v.status})` }))}
+              />
             </div>
           </div>
           {base ? (
@@ -134,16 +131,16 @@ function ChangesSection({ version, job }: { version: PromptVersion; job: Optimiz
 
   return (
     <section>
-      <h2 className="mb-3 font-semibold">Por que esta versão existe</h2>
+      <h2 className="mb-3 font-semibold">Why this version exists</h2>
       {job?.analysis && (
         <Card className="mb-4 p-4">
-          <div className="mb-1 text-xs font-medium text-zinc-500">Diagnóstico da IA ({job.feedback_ids.length} feedbacks)</div>
+          <div className="mb-1 text-xs font-medium text-zinc-500">AI diagnosis ({job.feedback_ids.length} feedbacks)</div>
           <p className="text-sm text-zinc-700">{job.analysis.diagnosis}</p>
           {job.analysis.patterns.length > 0 && (
             <ul className="mt-3 space-y-1">
               {job.analysis.patterns.map((p, i) => (
                 <li key={i} className="flex gap-2 text-sm">
-                  <Badge tone={p.kind === 'failure' ? 'red' : 'green'}>{p.kind === 'failure' ? 'falha' : 'acerto'}</Badge>
+                  <Badge tone={p.kind === 'failure' ? 'red' : 'green'}>{p.kind === 'failure' ? 'failure' : 'success'}</Badge>
                   <span className="text-zinc-700">{p.description}</span>
                 </li>
               ))}
@@ -164,7 +161,7 @@ function ChangesSection({ version, job }: { version: PromptVersion; job: Optimiz
             )}
             {c.feedback_ids.length > 0 && (
               <div className="mt-3 space-y-1">
-                <div className="text-xs font-medium text-zinc-500">Feedbacks que motivaram</div>
+                <div className="text-xs font-medium text-zinc-500">Feedback that motivated this</div>
                 {c.feedback_ids.map((fid) => {
                   const f = fbById.get(fid)
                   if (!f) return null
@@ -207,7 +204,7 @@ function TestBattery({ version, baseline, jobId }: { version: PromptVersion; bas
     onSuccess: () => qc.invalidateQueries({ queryKey: ['test_runs'] }),
   })
 
-  // Último run de cada (caso, versão).
+  // Latest run for each (case, version).
   const latest = new Map<string, RunRow>()
   for (const r of runs ?? []) {
     const k = `${r.test_case_id}:${r.prompt_version_id}`
@@ -220,24 +217,24 @@ function TestBattery({ version, baseline, jobId }: { version: PromptVersion; bas
   return (
     <section>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-semibold">Bateria de testes simulados</h2>
+        <h2 className="font-semibold">Simulated test suite</h2>
         <Button variant="secondary" onClick={() => rerun.mutate()} disabled={rerun.isPending}>
-          <FlaskConical size={15} /> {rerun.isPending ? 'Disparando…' : 'Rodar bateria'}
+          <FlaskConical size={15} /> {rerun.isPending ? 'Starting…' : 'Run suite'}
         </Button>
       </div>
       {rerun.error && <p className="mb-3 text-sm text-red-600">{rerun.error.message}</p>}
 
       {!cases.length ? (
-        <Empty>Nenhum teste rodado para esta versão ainda.</Empty>
+        <Empty>No tests have run for this version yet.</Empty>
       ) : (
         <>
           <div className="mb-4 grid gap-3 sm:grid-cols-2">
-            <Summary title={`Candidata · v${version.version}`} runs={candRuns} highlight />
+            <Summary title={`Candidate · v${version.version}`} runs={candRuns} highlight />
             {baseline && <Summary title={`Baseline · v${baseline.version} (${baseline.status})`} runs={baseRuns} />}
           </div>
           <Card className="overflow-hidden">
             <div className="grid grid-cols-[1fr_120px_120px] border-b border-zinc-200 px-4 py-2 text-xs font-medium text-zinc-500">
-              <span>Caso</span>
+              <span>Case</span>
               <span className="text-center">v{version.version}</span>
               <span className="text-center">{baseline ? `v${baseline.version}` : ''}</span>
             </div>
@@ -258,8 +255,8 @@ function TestBattery({ version, baseline, jobId }: { version: PromptVersion; bas
                   {isOpen && (
                     <div className="grid gap-4 bg-zinc-50 px-4 py-4 lg:grid-cols-2">
                       <div className="text-xs text-zinc-600 lg:col-span-2">
-                        <b>Cenário:</b> {c.scenario} <br />
-                        <b>Esperado:</b> {c.expected_behavior}
+                        <b>Scenario:</b> {c.scenario} <br />
+                        <b>Expected:</b> {c.expected_behavior}
                       </div>
                       <RunTranscript title={`v${version.version}`} run={cand} />
                       {baseline && <RunTranscript title={`v${baseline.version}`} run={bas} />}
@@ -286,15 +283,15 @@ function Summary({ title, runs, highlight }: { title: string; runs: RunRow[]; hi
       <div className="mt-2 flex items-end gap-6">
         <div>
           <div className="text-2xl font-semibold tabular-nums">{avg !== null ? avg.toFixed(1) : '—'}</div>
-          <div className="text-xs text-zinc-500">nota média</div>
+          <div className="text-xs text-zinc-500">average score</div>
         </div>
         <div>
           <div className="text-2xl font-semibold tabular-nums">
             {passed}/{done.length}
           </div>
-          <div className="text-xs text-zinc-500">aprovados</div>
+          <div className="text-xs text-zinc-500">passed</div>
         </div>
-        {pending > 0 && <div className="text-xs text-sky-700">{pending} rodando…</div>}
+        {pending > 0 && <div className="text-xs text-sky-700">{pending} running…</div>}
       </div>
     </Card>
   )
@@ -340,7 +337,7 @@ function RunTranscript({ title, run }: { title: string; run?: TestRun }) {
       </div>
       {run.judge_reasoning && (
         <div className="mt-2 rounded-md border border-violet-200 bg-violet-50 p-2 text-xs text-violet-900">
-          <b>Juiz:</b> {run.judge_reasoning}
+          <b>Judge:</b> {run.judge_reasoning}
         </div>
       )}
     </div>
