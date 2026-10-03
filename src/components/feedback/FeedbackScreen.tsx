@@ -59,7 +59,7 @@ export function FeedbackScreen() {
                   type="button"
                   onClick={() => setFilter(f)}
                   className={cn(
-                    'flex h-[28px] items-center rounded-full px-[12px] text-[13px] font-medium',
+                    'flex h-[28px] shrink-0 items-center whitespace-nowrap rounded-full px-[12px] text-[13px] font-medium',
                     filter === f ? 'bg-surface-raised text-foreground' : 'text-muted-foreground hover:text-foreground',
                   )}
                 >

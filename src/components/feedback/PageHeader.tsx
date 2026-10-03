@@ -22,7 +22,7 @@ function OutlineButton({ icon: Icon, label }: { icon: typeof FolderPlus; label: 
   return (
     <button
       type="button"
-      className="flex h-[36px] items-center justify-center gap-[6px] rounded-full bg-background px-[16px] text-foreground outline outline-1 -outline-offset-1 outline-border-strong hover:bg-surface"
+      className="flex h-[36px] shrink-0 items-center justify-center gap-[6px] whitespace-nowrap rounded-full bg-background px-[16px] text-foreground outline outline-1 -outline-offset-1 outline-border-strong hover:bg-surface"
     >
       <Icon size={16} />
       <span className="text-[14px] leading-[1.43] font-medium">{label}</span>

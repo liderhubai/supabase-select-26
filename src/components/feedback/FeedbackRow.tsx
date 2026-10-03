@@ -24,7 +24,7 @@ export function Checkbox({ state, onClick }: { state: 'checked' | 'mixed' | 'unc
 export function FeedbackRow({ item, selected, onToggle }: { item: Feedback; selected: boolean; onToggle: () => void }) {
   const negative = item.kind === 'negative'
   return (
-    <div className="flex w-full gap-[14px] border-b border-border px-[20px] py-[14px]">
+    <div className={cn('flex w-full gap-[14px] border-b border-border px-[20px] py-[14px]', item.trained && 'opacity-60')}>
       <div className="pt-[2px]">
         <Checkbox state={selected ? 'checked' : 'unchecked'} onClick={onToggle} />
       </div>
@@ -38,7 +38,7 @@ export function FeedbackRow({ item, selected, onToggle }: { item: Feedback; sele
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-[4px]">
         <div className="flex w-full items-center gap-[8px]">
-          <span className="text-[14px] font-medium text-foreground">{item.message}</span>
+          <span className="shrink-0 text-[14px] font-medium text-foreground">{item.message}</span>
           <span className="font-mono text-[11px] text-subtle-foreground">{item.id}</span>
         </div>
         <p className="text-[13px] text-muted-foreground">{item.reply}</p>
@@ -58,7 +58,7 @@ export function FeedbackRow({ item, selected, onToggle }: { item: Feedback; sele
         ) : (
           <button
             type="button"
-            className="flex h-[30px] items-center justify-center gap-[6px] rounded-full px-[12px] outline outline-1 -outline-offset-1 outline-border-strong hover:bg-surface-raised"
+            className="flex h-[30px] shrink-0 items-center whitespace-nowrap justify-center gap-[6px] rounded-full px-[12px] outline outline-1 -outline-offset-1 outline-border-strong hover:bg-surface-raised"
           >
             <Sparkles size={14} className="text-accent" />
             <span className="text-[13px] leading-[1.43] font-medium text-foreground">Treinar só este</span>
