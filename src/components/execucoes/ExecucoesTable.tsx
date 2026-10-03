@@ -35,8 +35,8 @@ export function ExecucoesTable({ rows }: { rows: Execucao[] }) {
             )}
           >
             <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
-              <span className="truncate text-[14px] font-medium text-foreground">{r.mensagem}</span>
-              <span className="font-mono text-[11px] text-subtle-foreground">{r.id} · {r.autor}</span>
+              <span className="truncate text-[14px] leading-[1.2] font-medium text-foreground">{r.mensagem}</span>
+              <span className="font-mono text-[11px] leading-[1.2] text-subtle-foreground">{r.id} · {r.autor}</span>
             </div>
             <div className="flex w-[110px]">
               <span className="flex h-[22px] items-center rounded-[6px] border border-border px-[8px] font-mono text-[11px] text-muted-foreground">

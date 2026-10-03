@@ -76,8 +76,8 @@ export function ExecucoesView() {
         <div className="flex min-h-[300px] w-full flex-1 flex-col overflow-hidden rounded-[20px] border border-border bg-surface">
           <div className="flex w-full shrink-0 items-center justify-between border-b border-border px-[20px] py-[16px]">
             <div className="flex flex-col gap-[2px]">
-              <span className="font-display text-[16px] font-medium tracking-[-0.2px] text-foreground">Execuções recentes</span>
-              <span className="text-[13px] text-muted-foreground">Clique numa linha para abrir o snapshot da execução</span>
+              <span className="font-display text-[16px] leading-[1.2] font-medium tracking-[-0.2px] text-foreground">Execuções recentes</span>
+              <span className="text-[13px] leading-[1.2] text-muted-foreground">Clique numa linha para abrir o snapshot da execução</span>
             </div>
             <button type="button" className="flex h-[36px] items-center justify-center rounded-full px-[16px] text-[14px] leading-[1.43] font-medium text-muted-foreground hover:text-foreground">
               Exportar

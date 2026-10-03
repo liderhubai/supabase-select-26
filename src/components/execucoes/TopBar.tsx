@@ -13,7 +13,7 @@ export function TopBar() {
       <div className="flex-1" />
       <div className="flex h-[36px] w-[260px] items-center gap-[8px] rounded-full border border-border bg-surface pr-[6px] pl-[12px]">
         <Search size={15} className="shrink-0 text-subtle-foreground" />
-        <span className="flex-1 truncate text-[13px] text-subtle-foreground">Buscar mensagens, execuções…</span>
+        <span className="flex-1 overflow-hidden whitespace-nowrap text-[13px] text-subtle-foreground">Buscar mensagens, execuções…</span>
         <span className="flex h-[22px] items-center rounded-[6px] border border-border bg-surface-raised px-[6px] font-mono text-[11px] text-muted-foreground">
           ⌘K
         </span>

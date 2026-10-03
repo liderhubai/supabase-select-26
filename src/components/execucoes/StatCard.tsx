@@ -14,7 +14,7 @@ export function StatCard({
   return (
     <div className="flex flex-1 flex-col gap-[16px] rounded-[20px] border border-border bg-surface p-[20px]">
       <div className="flex w-full items-center justify-between">
-        <span className="font-mono text-[11px] tracking-[0.8px] text-muted-foreground">{label}</span>
+        <span className="font-mono text-[11px] leading-[1.2] tracking-[0.8px] text-muted-foreground">{label}</span>
         <Icon size={15} className="text-subtle-foreground" />
       </div>
       <div className="flex items-end gap-[10px]">
@@ -23,7 +23,7 @@ export function StatCard({
           <span className={cn('font-mono text-[12px]', deltaTone === 'success' ? 'text-success' : 'text-error')}>{delta}</span>
         )}
       </div>
-      <span className="text-[12px] text-subtle-foreground">{footnote}</span>
+      <span className="text-[12px] leading-[1.2] text-subtle-foreground">{footnote}</span>
     </div>
   )
 }
