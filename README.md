@@ -1,8 +1,10 @@
-# Agent Studio
+# Itera AI
 
 Built for the **Supabase Select 26 hackathon**.
 
-Create AI customer-service agents, chat with them, review conversations, and let Claude improve their prompts from your feedback. Every new prompt version gets a simulated test run and a diff before you promote it.
+AI customer-service agents are hard to improve. Teams don't know where the agent fails, feedback gets lost, and prompt changes go live without testing.
+
+**Itera AI** turns human feedback into better prompts. Reviewers rate the agent's replies, Claude rewrites the prompt based on that feedback, and every new version is tested against simulated customers before it goes to production.
 
 **Stack:** Next.js · Supabase (Postgres + Realtime) · Vercel AI SDK · Claude
 
