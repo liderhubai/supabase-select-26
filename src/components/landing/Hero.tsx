@@ -22,7 +22,7 @@ export function Hero() {
       <div className="absolute top-[48px] left-[48px] flex h-[664px] w-[1184px] flex-col items-center justify-center gap-[28px] rounded-[16px] border border-[#ffffff1a] bg-[#09090b8c] px-[96px] backdrop-blur-[10px]">
         <div className="flex items-center gap-[8px] rounded-full border border-[#ff660052] bg-[#ff66001f] px-[14px] py-[6px]">
           <span className="h-[6px] w-[6px] rounded-full bg-[#ff6600]" />
-          <span className="font-body text-[13px] font-medium text-[#ffd1b3]">
+          <span className="font-body text-[13px] font-medium text-[#ffd1b3] leading-[1.2]">
             Built at Supabase Select Hackathon 2026 · San Francisco
           </span>
         </div>
@@ -39,20 +39,20 @@ export function Hero() {
             className="flex items-center gap-[10px] rounded-full bg-[#ff6600] px-[24px] py-[14px] hover:bg-[#ff7a1f]"
           >
             <MessageSquare className="h-[18px] w-[18px] text-[#18181b]" />
-            <span className="font-body text-[16px] font-medium text-[#18181b]">Simulate a conversation</span>
+            <span className="font-body text-[16px] font-medium text-[#18181b] leading-[1.2]">Simulate a conversation</span>
           </Link>
           <a
             href="#how-it-works"
             className="flex items-center gap-[10px] rounded-full border border-[#ffffff26] bg-[#0a0a0a] px-[24px] py-[14px] hover:bg-[#18181b]"
           >
-            <span className="font-body text-[16px] font-medium text-[#f5f5f5]">See the loop</span>
+            <span className="font-body text-[16px] font-medium text-[#f5f5f5] leading-[1.2]">See the loop</span>
             <RefreshCw className="h-[16px] w-[16px] text-[#a1a1aa]" />
           </a>
         </div>
         <div className="flex items-center gap-[14px] pt-[28px]">
           {STEPS.map((step, i) => (
             <div key={step} className="flex items-center gap-[14px]">
-              <div className="flex items-center gap-[6px] font-mono text-[12px] font-normal">
+              <div className="flex items-center gap-[6px] font-mono text-[12px] font-normal leading-[1.2]">
                 <span className="text-[#ff6600]">{String(i + 1).padStart(2, '0')}</span>
                 <span className="text-[#d4d4d8]">{step}</span>
               </div>

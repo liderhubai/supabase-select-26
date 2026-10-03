@@ -25,10 +25,10 @@ export function Insight() {
             </p>
           </div>
           <div className="flex w-full flex-col gap-[6px] border-l-2 border-[#ff6600] py-[4px] pl-[20px]">
-            <span className="font-body text-[17px] font-normal text-[#a1a1aa]">
+            <span className="font-body text-[17px] font-normal text-[#a1a1aa] leading-[1.2]">
               So Banga rewrote the mission in two words:
             </span>
-            <span className="font-display text-[40px] font-medium tracking-[-1px] text-[#fafafa] italic">
+            <span className="font-display text-[40px] font-medium tracking-[-1px] text-[#fafafa] italic leading-[1.2]">
               kill cash.
             </span>
           </div>
@@ -41,7 +41,7 @@ export function Insight() {
             alt="Burning cash"
             className="h-[540px] w-full rounded-[12px] border border-[#ffffff1a] object-cover"
           />
-          <span className="font-mono text-[11px] font-normal tracking-[1px] text-[#71717a]">
+          <span className="font-mono text-[11px] font-normal tracking-[1px] text-[#71717a] leading-[1.2]">
             FIG. 01 — THE REAL COMPETITOR WAS NEVER VISA.
           </span>
         </div>
@@ -50,7 +50,7 @@ export function Insight() {
       {/* Market */}
       <div className="flex w-full flex-col gap-[28px]">
         <div className="flex w-full gap-[80px]">
-          <span className="min-w-0 flex-1 font-mono text-[12px] font-normal tracking-[1.5px] text-[#71717a]">
+          <span className="min-w-0 flex-1 font-mono text-[12px] font-normal tracking-[1.5px] text-[#71717a] leading-[1.2]">
             THE AGENT MARKET, TODAY
           </span>
           <div className={`w-[620px] shrink-0 ${body}`}>
@@ -69,25 +69,25 @@ export function Insight() {
         </div>
         <div className="flex h-[88px] w-full gap-[4px]">
           <div className="flex w-[174px] shrink-0 flex-col justify-between rounded-[10px_2px_2px_10px] bg-[#27272a] p-[16px]">
-            <span className="font-display text-[24px] font-medium text-[#fafafa]">15%</span>
-            <span className="font-mono text-[11px] font-normal text-[#9f9fa9]">already use agents</span>
+            <span className="font-display text-[24px] font-medium text-[#fafafa] leading-[1.2]">15%</span>
+            <span className="font-mono text-[11px] font-normal text-[#9f9fa9] leading-[1.2]">already use agents</span>
           </div>
           <div
             className="flex min-w-0 flex-1 items-end justify-between rounded-[2px_10px_10px_2px] p-[16px]"
             style={{ background: 'linear-gradient(90deg, #ff6600 0%, #ff660033 100%)' }}
           >
             <div className="flex flex-col gap-[6px]">
-              <span className="font-display text-[24px] font-medium text-[#18181b]">85%</span>
-              <span className="font-mono text-[11px] font-normal text-[#18181b]">
+              <span className="font-display text-[24px] font-medium text-[#18181b] leading-[1.2]">85%</span>
+              <span className="font-mono text-[11px] font-normal text-[#18181b] leading-[1.2]">
                 tried once, got stuck, never came back
               </span>
             </div>
-            <span className="font-mono text-[11px] font-normal tracking-[1px] text-[#ffd1b3]">
+            <span className="font-mono text-[11px] font-normal tracking-[1px] text-[#ffd1b3] leading-[1.2]">
               ← NOBODY IS BUILDING FOR THEM
             </span>
           </div>
         </div>
-        <div className="flex w-full gap-[4px] font-mono text-[11px] font-normal text-[#71717a]">
+        <div className="flex w-full gap-[4px] font-mono text-[11px] font-normal text-[#71717a] leading-[1.2]">
           <span className="w-[174px] shrink-0">Evals · frameworks · dashboards</span>
           <span className="min-w-0 flex-1">The drop-off: people who tried an agent once and never came back</span>
         </div>
@@ -95,7 +95,7 @@ export function Insight() {
 
       {/* Mission */}
       <div className="flex w-full flex-col items-center gap-[16px] border-y border-[#ffffff1a] py-[56px]">
-        <span className="font-mono text-[12px] font-normal tracking-[2px] text-[#71717a]">OUR MISSION</span>
+        <span className="font-mono text-[12px] font-normal tracking-[2px] text-[#71717a] leading-[1.2]">OUR MISSION</span>
         <span className="font-display text-[96px] leading-[1.2] font-medium tracking-[-3px] text-[#ff6600]">
           Kill the drop-off.
         </span>

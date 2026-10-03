@@ -31,7 +31,7 @@ function RoleCard({
         >
           <Icon className={cn('h-[20px] w-[20px]', danger ? 'text-[#ef4444]' : 'text-[#d4d4d8]')} />
         </div>
-        <span className="font-mono text-[11px] font-normal tracking-[1px] text-[#71717a]">{role}</span>
+        <span className="font-mono text-[11px] font-normal tracking-[1px] text-[#71717a] leading-[1.2]">{role}</span>
       </div>
       {children}
       <p
@@ -82,11 +82,11 @@ export function Problem() {
       <div className="flex w-full items-center">
         <RoleCard icon={MessageSquareWarning} role="01 · THE AGENT" statement="Misreads one message." danger>
           <div className="flex w-full flex-col items-end gap-[6px]">
-            <div className="rounded-[10px_10px_2px_10px] bg-[#ff6600] px-[10px] py-[6px] font-body text-[12px] font-normal text-[#18181b]">
+            <div className="rounded-[10px_10px_2px_10px] bg-[#ff6600] px-[10px] py-[6px] font-body text-[12px] font-normal text-[#18181b] leading-[1.2]">
               Can we move my hearing to Friday?
             </div>
             <div className="flex w-full">
-              <div className="rounded-[10px_10px_10px_2px] border border-[#ef444466] bg-[#ef44441f] px-[10px] py-[6px] font-body text-[12px] font-normal text-[#fca5a5]">
+              <div className="rounded-[10px_10px_10px_2px] border border-[#ef444466] bg-[#ef44441f] px-[10px] py-[6px] font-body text-[12px] font-normal text-[#fca5a5] leading-[1.2]">
                 Our office hours are 9am–6pm.
               </div>
             </div>
@@ -102,10 +102,10 @@ export function Problem() {
 
       <div className="flex w-full flex-col gap-[16px]">
         <div className="flex w-full items-center justify-between">
-          <span className="font-body text-[17px] font-normal text-[#d4d4d8]">
+          <span className="font-body text-[17px] font-normal text-[#d4d4d8] leading-[1.2]">
             Weeks go by, and the same mistake hits the next hundred users.
           </span>
-          <span className="font-mono text-[11px] font-normal tracking-[1px] text-[#71717a]">
+          <span className="font-mono text-[11px] font-normal tracking-[1px] text-[#71717a] leading-[1.2]">
             WEEK 1 → WEEK 6 · ×100 USERS
           </span>
         </div>
@@ -129,7 +129,7 @@ export function Problem() {
               i > 0 && 'border-l border-[#ffffff1a] pl-[32px]',
             )}
           >
-            <span className="font-display text-[44px] font-medium text-[#ff6600]">{s.value}</span>
+            <span className="font-display text-[44px] font-medium text-[#ff6600] leading-[1.2]">{s.value}</span>
             <span className="font-body text-[14px] leading-[1.5] font-normal text-[#9f9fa9]">{s.label}</span>
           </div>
         ))}
@@ -137,7 +137,7 @@ export function Problem() {
 
       <div className="flex w-full items-center gap-[16px] rounded-[12px] border border-[#ef444433] bg-[#ef44440f] px-[28px] py-[24px]">
         <CircleAlert className="h-[22px] w-[22px] shrink-0 text-[#ef4444]" />
-        <span className="font-display text-[26px] font-medium text-[#fafafa]">
+        <span className="font-display text-[26px] font-medium text-[#fafafa] leading-[1.2]">
           The feedback loop is broken, and that is where users are lost.
         </span>
       </div>
