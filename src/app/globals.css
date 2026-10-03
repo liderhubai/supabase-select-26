@@ -1,7 +1,76 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* Tokens do design system itera.ai — valores exatos das variáveis do untitled.pen */
+:root {
+  --background: #09090b;
+  --surface: #111113;
+  --surface-raised: #18181b;
+  --muted: #27272a;
+  --border: #ffffff1a;
+  --border-strong: #ffffff33;
+  --foreground: #fafafa;
+  --muted-foreground: #9f9fa9;
+  --subtle-foreground: #71717a;
+  --primary: #ff6600;
+  --primary-foreground: #18181b;
+  --accent: #ff6600;
+  --accent-soft: #ff66001f;
+  --accent-foreground: #ffd1b3;
+  --success: #22c55e;
+  --success-soft: #22c55e1f;
+  --warning: #eab308;
+  --warning-soft: #eab3081f;
+  --error: #ef4444;
+  --error-soft: #ef44441f;
+  --info: #2b91ff;
+  --info-soft: #2b91ff1f;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+}
+
+/* Expõe os tokens como utilitários Tailwind: bg-background, text-muted-foreground, border-border,
+   bg-accent-soft, rounded-sm (6) / rounded-md (12) / rounded-lg (20) / rounded-pill, font-display, font-mono… */
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-error: var(--error);
+  --color-error-soft: var(--error-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-pill: var(--radius-pill);
+
+  --font-display: var(--font-outfit), "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-roboto), "Roboto", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), "Geist Mono", ui-monospace, monospace;
+  --font-sans: var(--font-roboto), "Roboto", ui-sans-serif, system-ui, sans-serif;
+}
+
 body {
-  @apply bg-zinc-50 text-zinc-900 antialiased;
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-roboto), "Roboto", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
