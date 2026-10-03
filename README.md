@@ -1,51 +1,68 @@
 # Agent Studio
 
-Customer service simulator for AI agents (Claude via the Vercel AI SDK), with full observability
-(conversations, messages and traces of every call), reviewer feedback and a **self-improvement** queue
-that rewrites the prompt with justifications, runs a suite of simulated tests and only promotes to
-production after your review (diff + reasons + baseline vs. candidate scores).
+Built for the **Supabase Select 26 hackathon**.
 
-```
-src/app/            Next.js App Router (pages + API routes)
-  api/chat          streams the conversation + records messages/traces
-  api/optimize      GEPA-style reflection over the feedback → staging version + test suite
-  api/test-runs     runs a version's test suite on demand
-src/lib/server/     AI logic and database access with the service role (server only)
-src/views/          screens (client components)
-supabase/           migrations and seed (Supabase is used only as Postgres + Realtime)
-```
+Create AI customer-service agents, chat with them, review conversations, and let Claude improve their prompts from your feedback. Every new prompt version gets a simulated test run and a diff before you promote it.
 
-## Flow
+**Stack:** Next.js · Supabase (Postgres + Realtime) · Vercel AI SDK · Claude
 
-1. **Agents** — create the agent; the prompt becomes v1 in production.
-2. **Simulation** — chat as a customer. Each turn records `messages` and a trace in `executions`
-   (full input, output, tokens, latency).
-3. **Observability** — open a conversation and mark replies with 👍/👎 and extra context.
-4. **Improvement queue** — select feedback and click *Process with AI*: the optimizer diagnoses
-   patterns, rewrites the prompt (each change cites the feedback that motivated it), generates test
-   cases from the feedback and runs the suite on current production and on the candidate.
-5. **Versions** — on the staging version see the diff, the reasons and the scores; *Promote* or *Reject*
-   (rejecting returns the feedback to the queue).
+## Requirements
 
-## Setup
+- Node.js 22+
+- [Supabase CLI](https://supabase.com/docs/guides/cli)
+- A Supabase project
+- An Anthropic API key
+
+## Run locally
+
+**1. Install dependencies**
 
 ```bash
-supabase link --project-ref <ref>
-supabase db push --include-seed
-cp .env.example .env.local   # URL, anon key, service role key and ANTHROPIC_API_KEY
 npm install
+```
+
+**2. Set up the database**
+
+```bash
+supabase login
+supabase link --project-ref <your-project-ref>
+supabase db push --include-seed
+```
+
+**3. Set environment variables**
+
+```bash
+cp .env.example .env.local
+```
+
+Fill in `.env.local`:
+
+| Variable | Where to find it |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API Keys (anon / publishable) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API Keys (service_role / secret) |
+| `ANTHROPIC_API_KEY` | Anthropic Console → API Keys |
+| `ANTHROPIC_WORKSPACE_ID` | Optional. Only needed if your key is not scoped to a workspace (`wrkspc_...`) |
+
+**4. Start the app**
+
+```bash
 npm run dev
 ```
 
-Deploy: import the repository into Vercel and set the same 4 environment variables.
+Open http://localhost:3000.
 
-## Notes
+## How to use
 
-- MVP **without login**: RLS is enabled, but with an open policy for `anon`. Before exposing it
-  publicly, add Supabase Auth and replace the `mvp_open_access` policies.
-- Models: the agent uses the model chosen at creation (Opus 5.5 or Sonnet 5.5); the optimizer, judge
-  and simulated customer use `claude-sonnet-5-5`. Requests use `fallbacks: 'default'` for classifier
-  refusals.
-- Optimization and the test suite run in the background with Next's `after()`, with test runs in
-  parallel. The `api/optimize` and `api/test-runs` routes use `maxDuration = 800` (Vercel Pro with Fluid
-  Compute); on the Hobby plan the limit is 300 s — lower the value in those routes.
+1. **Agents**: create an agent or use one of the two seeded ones.
+2. **Simulation**: chat with the agent as a customer.
+3. **Observability**: open a conversation and rate the agent's replies 👍 / 👎.
+4. **Improvement queue**: select feedback and click *Process with AI*.
+5. **Versions**: review the diff, the reasons and the test scores, then promote or reject.
+
+## Deploy
+
+Import the repository into Vercel and add the same environment variables.
+
+> No login in this MVP. The database is open to the anon key, so don't expose it publicly as is.
