@@ -165,23 +165,22 @@ function FeedbackForm({ open, selection, onClose }: Props & { selection: Feedbac
             <Mic size={28} />
           </button>
           <span className={cn('text-[13px]', recording ? 'text-error' : 'text-muted-foreground')} aria-live="polite">
-            {!supported ? 'Voice input isn\u2019t supported in this browser' : recording ? 'Listening… tap to stop' : 'Tap to speak'}
+            {!supported ? 'Voice input isn\u2019t supported here, type below' : recording ? 'Listening… tap to stop' : 'Tap to speak or type below'}
           </span>
           {voiceError && <p className="text-center text-[12px] text-error">{voiceError}</p>}
         </div>
 
-        {hasText && (
-          <div className="flex flex-col gap-[4px]">
-            <textarea
-              aria-label="Feedback transcript"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              rows={4}
-              className="w-full resize-none bg-transparent text-[14px] leading-[1.6] text-foreground outline-none"
-            />
-            {interim && <p className="text-[14px] leading-[1.6] text-subtle-foreground italic">{interim}</p>}
-          </div>
-        )}
+        <div className="flex flex-col gap-[6px]">
+          <textarea
+            aria-label="Feedback"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder={supported ? 'Or type your feedback here…' : 'Type your feedback here…'}
+            rows={5}
+            className="w-full resize-none rounded-[12px] border border-border bg-background px-[14px] py-[10px] text-[14px] leading-[1.6] text-foreground outline-none placeholder:text-subtle-foreground focus:border-border-strong"
+          />
+          {interim && <p className="px-[2px] text-[14px] leading-[1.6] text-subtle-foreground italic">{interim}</p>}
+        </div>
       </div>
 
       <footer className="flex shrink-0 flex-col items-end gap-[8px] border-t border-border px-[20px] py-[16px]">
