@@ -1,22 +1,35 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useCurrentAgent } from '@/lib/queries'
 import { unwrap } from '@/lib/utils'
+import type { FeedbackTarget, Rating } from '@/components/app/FeedbackModal'
 import { lastActivity, type ConversationRow } from './data'
 import { Inbox } from './Inbox'
 import { Thread } from './Thread'
-import { DetailsPanel } from './DetailsPanel'
+import { FeedbackSheet, type FeedbackSelection } from './FeedbackSheet'
 
-export function ChatsScreen({ initialId }: { initialId?: string }) {
+export function ChatsScreen({ initialId, initialMessageId }: { initialId?: string; initialMessageId?: string }) {
   const router = useRouter()
   const qc = useQueryClient()
   const { agent } = useCurrentAgent()
   const [selected, setSelected] = useState<string | undefined>(initialId)
-  const [panelOpen, setPanelOpen] = useState(true)
+  // Message to scroll to and highlight when arriving from an execution.
+  const [focusId, setFocusId] = useState<string | undefined>(initialMessageId)
+  const [feedback, setFeedback] = useState<FeedbackSelection | null>(null)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
+
+  // Same message already open: just switch the rating. Otherwise start a fresh form.
+  const rate = (target: FeedbackTarget, rating: Rating) => {
+    setFeedback((prev) =>
+      prev && feedbackOpen && prev.target.messageId === target.messageId ? { ...prev, rating } : { target, rating, seq: (prev?.seq ?? 0) + 1 },
+    )
+    setFeedbackOpen(true)
+  }
+  const closeFeedback = useCallback(() => setFeedbackOpen(false), [])
 
   const { data: conversations, isLoading } = useQuery({
     queryKey: ['conversations', agent?.id],
@@ -37,7 +50,9 @@ export function ChatsScreen({ initialId }: { initialId?: string }) {
   const current = conversations?.find((c) => c.id === selected) ?? conversations?.[0]
 
   const select = (id: string) => {
+    setFeedbackOpen(false)
     setSelected(id)
+    setFocusId(undefined)
     router.replace(`/app/chats?c=${id}`, { scroll: false })
   }
 
@@ -78,8 +93,13 @@ export function ChatsScreen({ initialId }: { initialId?: string }) {
       />
       {current ? (
         <>
-          <Thread key={current.id} conversation={current} onTogglePanel={() => setPanelOpen((o) => !o)} />
-          {panelOpen && <DetailsPanel conversation={current} onClose={() => setPanelOpen(false)} />}
+          <Thread key={current.id} conversation={current} focusMessageId={focusId} ratingMessageId={feedbackOpen ? feedback?.target.messageId : undefined} onRate={rate} />
+          <FeedbackSheet
+            open={feedbackOpen}
+            selection={feedback}
+            onRatingChange={(rating) => setFeedback((prev) => prev && { ...prev, rating })}
+            onClose={closeFeedback}
+          />
         </>
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-[12px] text-center">

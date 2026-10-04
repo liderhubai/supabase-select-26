@@ -1,26 +1,40 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport, type UIMessage } from 'ai'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Activity, ArrowUpRight, PanelRightClose, SendHorizontal, ThumbsDown, ThumbsUp } from 'lucide-react'
+import { SendHorizontal, ThumbsDown, ThumbsUp } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useCurrentAgent } from '@/lib/queries'
 import { cn, unwrap } from '@/lib/utils'
 import type { Message } from '@/lib/types'
 import { ConfidenceBadge } from '@/components/app/ConfidenceBadge'
-import { FeedbackModal, type FeedbackTarget, type Rating } from '@/components/app/FeedbackModal'
+import type { FeedbackTarget, Rating } from '@/components/app/FeedbackModal'
 import { Markdown } from '@/components/app/Markdown'
 import type { ConversationRow } from './data'
+import { TracePopover } from './TracePopover'
 
 export const gradient = 'bg-[linear-gradient(135deg,#ff6600_14.645%,#7a2e00_85.355%)]'
 const time = (iso?: string) => (iso ? new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '')
 
 type AssistantRow = Message & { executions: { latency_ms: number | null } | null; feedbacks: { rating: Rating }[] }
 
-export function Thread({ conversation, onTogglePanel }: { conversation: ConversationRow; onTogglePanel: () => void }) {
+type RateHandler = (target: FeedbackTarget, rating: Rating) => void
+
+export function Thread({
+  conversation,
+  focusMessageId,
+  ratingMessageId,
+  onRate,
+}: {
+  conversation: ConversationRow
+  /** Message to scroll to and highlight on open. */
+  focusMessageId?: string
+  /** Agent message currently open in the feedback sheet. */
+  ratingMessageId?: string
+  onRate: RateHandler
+}) {
   const { agent } = useCurrentAgent()
   const { data: initial } = useQuery({
     queryKey: ['messages', conversation.id],
@@ -42,28 +56,10 @@ export function Thread({ conversation, onTogglePanel }: { conversation: Conversa
             {agent?.name} · prompt v{conversation.prompt_versions?.version} · <span className="font-mono">{agent?.model}</span>
           </span>
         </div>
-        <div className="flex items-center gap-[8px]">
-          <Link
-            href="/app/executions"
-            className="flex h-[36px] items-center justify-center gap-[6px] rounded-full border border-border-strong bg-background px-[16px] text-[14px] font-medium text-foreground hover:bg-surface"
-          >
-            <Activity size={16} />
-            Executions
-          </Link>
-          <button
-            type="button"
-            aria-label="Toggle details"
-            title="Toggle details"
-            onClick={onTogglePanel}
-            className="flex h-[36px] w-[36px] items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-surface"
-          >
-            <PanelRightClose size={16} />
-          </button>
-        </div>
       </header>
 
       {initial ? (
-        <ChatBody conversation={conversation} initial={initial} />
+        <ChatBody conversation={conversation} initial={initial} focusMessageId={focusMessageId} ratingMessageId={ratingMessageId} onRate={onRate} />
       ) : (
         <div className="flex flex-1 items-center justify-center text-[13px] text-subtle-foreground">Loading…</div>
       )}
@@ -71,12 +67,25 @@ export function Thread({ conversation, onTogglePanel }: { conversation: Conversa
   )
 }
 
-function ChatBody({ conversation, initial }: { conversation: ConversationRow; initial: Message[] }) {
+function ChatBody({
+  conversation,
+  initial,
+  focusMessageId,
+  ratingMessageId,
+  onRate,
+}: {
+  conversation: ConversationRow
+  initial: Message[]
+  focusMessageId?: string
+  ratingMessageId?: string
+  onRate: RateHandler
+}) {
   const qc = useQueryClient()
   const conversationId = conversation.id
   const [input, setInput] = useState('')
-  const [feedback, setFeedback] = useState<{ target: FeedbackTarget; rating: Rating } | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const focusRef = useRef<HTMLDivElement>(null)
+  const focusPending = useRef(!!focusMessageId)
 
   const { messages, sendMessage, status, error } = useChat({
     id: conversationId,
@@ -117,6 +126,13 @@ function ChatBody({ conversation, initial }: { conversation: ConversationRow; in
   })
 
   useEffect(() => {
+    // On open from an execution, land on that message instead of the bottom.
+    if (focusPending.current && focusRef.current) {
+      focusPending.current = false
+      focusRef.current.scrollIntoView({ block: 'center' })
+      return
+    }
+    focusPending.current = false
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, status])
 
@@ -155,14 +171,16 @@ function ChatBody({ conversation, initial }: { conversation: ConversationRow; in
             return (
               <AgentMessage
                 key={m.id}
+                ref={m.id === focusMessageId ? focusRef : undefined}
+                focused={m.id === focusMessageId}
                 text={text}
                 row={streaming ? undefined : row}
                 streaming={streaming}
+                active={!!row && row.id === ratingMessageId}
                 onRate={(rating) =>
                   row &&
-                  setFeedback({
-                    rating,
-                    target: {
+                  onRate(
+                    {
                       messageId: row.id,
                       conversationId,
                       executionId: row.execution_id,
@@ -170,7 +188,8 @@ function ChatBody({ conversation, initial }: { conversation: ConversationRow; in
                       agentId: conversation.agent_id,
                       reply: row.content,
                     },
-                  })
+                    rating,
+                  )
                 }
               />
             )
@@ -221,8 +240,6 @@ function ChatBody({ conversation, initial }: { conversation: ConversationRow; in
           </div>
         </div>
       </div>
-
-      <FeedbackModal target={feedback?.target ?? null} initialRating={feedback?.rating ?? 'negative'} onClose={() => setFeedback(null)} />
     </>
   )
 }
@@ -236,30 +253,41 @@ function CustomerMessage({ text, time }: { text: string; time: string }) {
   )
 }
 
-function AgentMessage({ text, row, streaming, onRate }: { text: string; row?: AssistantRow; streaming: boolean; onRate: (r: Rating) => void }) {
+function AgentMessage({
+  ref,
+  focused,
+  text,
+  row,
+  streaming,
+  active,
+  onRate,
+}: {
+  ref?: React.Ref<HTMLDivElement>
+  focused?: boolean
+  text: string
+  row?: AssistantRow
+  streaming: boolean
+  active: boolean
+  onRate: (r: Rating) => void
+}) {
   const given = new Set(row?.feedbacks.map((f) => f.rating))
   return (
-    <div className="flex w-full gap-[10px] pr-[56px]">
+    <div ref={ref} className="flex w-full gap-[10px] pr-[56px]">
       <div className={cn('flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white', gradient)}>AI</div>
       <div className="flex min-w-0 flex-1 flex-col gap-[6px]">
-        <div className="w-full rounded-[16px_16px_16px_4px] border border-border bg-surface-raised px-[14px] py-[10px] text-foreground">
+        <div
+          className={cn(
+            'w-full rounded-[16px_16px_16px_4px] border bg-surface-raised px-[14px] py-[10px] text-foreground transition-colors',
+            active || focused ? 'border-accent shadow-[0_0_0_3px_#ff660026]' : 'border-border',
+          )}
+        >
           <Markdown>{text}</Markdown>
         </div>
         {!streaming && (
           <div className="flex w-full items-center gap-[8px] pl-[4px]">
             <span className="font-mono text-[11px] text-subtle-foreground">{time(row?.created_at)}</span>
             {row?.execution_id && (
-              <Link
-                href={`/app/executions/${row.execution_id}`}
-                className="flex items-center gap-[6px] rounded-full border border-border px-[8px] py-[3px] hover:bg-surface"
-              >
-                <Activity size={12} className="text-accent" />
-                <span className="font-mono text-[11px] text-muted-foreground">
-                  {row.execution_id.slice(0, 8)}
-                  {row.executions?.latency_ms != null && ` · ${(row.executions.latency_ms / 1000).toFixed(1)}s`}
-                </span>
-                <ArrowUpRight size={12} className="text-subtle-foreground" />
-              </Link>
+              <TracePopover executionId={row.execution_id} latencyMs={row.executions?.latency_ms ?? null} />
             )}
             {row && <ConfidenceBadge score={row.confidence} reason={row.confidence_reason} issues={row.confidence_issues} pending />}
             <span className="h-px flex-1" />

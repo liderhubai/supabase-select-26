@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useQuery } from '@tanstack/react-query'
+import { queryOptions, useQuery } from '@tanstack/react-query'
 import { ArrowLeft, ChevronDown, ChevronUp, Coins, Cpu, History, MessageCircle, Timer } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { cn, costUsd, formatMs, unwrap } from '@/lib/utils'
@@ -19,10 +19,9 @@ export type ExecutionDetailRow = Execution & {
   feedbacks: { id: string; rating: Rating; comment: string; reviewer_name: string; origin: 'human' | 'auto'; status: string }[]
 }
 
-export function ExecutionDetail({ id }: { id: string }) {
-  const [rateAs, setRateAs] = useState<Rating | null>(null)
-
-  const { data: ex, isLoading, error } = useQuery({
+/** Shared by the execution page and the trace popover in Chats. */
+export const executionQuery = (id: string) =>
+  queryOptions({
     queryKey: ['execution', id],
     queryFn: async () =>
       unwrap(
@@ -37,6 +36,11 @@ export function ExecutionDetail({ id }: { id: string }) {
     // The confidence score lands a few seconds after the reply.
     refetchInterval: (q) => (q.state.data && q.state.data.messages[0] && q.state.data.messages[0].confidence == null ? 2000 : false),
   })
+
+export function ExecutionDetail({ id }: { id: string }) {
+  const [rateAs, setRateAs] = useState<Rating | null>(null)
+
+  const { data: ex, isLoading, error } = useQuery(executionQuery(id))
 
   const agentId = ex?.conversations.agent_id
   const { data: neighbours } = useQuery({

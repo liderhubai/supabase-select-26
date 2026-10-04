@@ -49,30 +49,22 @@ export function RatingButtons({ value, onSelect }: { value: Rating | null; onSel
   )
 }
 
-/** Saves a reviewer rating on an agent reply; it lands in the Feedback queue as pending. */
-export function FeedbackModal({ target, initialRating, onClose }: { target: FeedbackTarget | null; initialRating: Rating; onClose: () => void }) {
+/** Last reviewer name used on this device (empty when unknown or storage is unavailable). */
+export function readReviewerName() {
+  try {
+    return localStorage.getItem(REVIEWER_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+export type FeedbackInput = { target: FeedbackTarget; rating: Rating; comment: string; reviewer: string }
+
+/** Inserts a reviewer rating on an agent reply; it lands in the Feedback queue as pending. */
+export function useSaveFeedback({ onSuccess }: { onSuccess?: () => void } = {}) {
   const qc = useQueryClient()
-  const [rating, setRating] = useState<Rating>(initialRating)
-  const [comment, setComment] = useState('')
-  const [reviewer, setReviewer] = useState('')
-
-  useEffect(() => {
-    if (!target) return
-    setRating(initialRating)
-    setComment('')
-    try {
-      setReviewer(localStorage.getItem(REVIEWER_KEY) ?? '')
-    } catch {
-      /* no storage */
-    }
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [target, initialRating, onClose])
-
-  const save = useMutation({
-    mutationFn: async () => {
-      if (!target) return
+  return useMutation({
+    mutationFn: async ({ target, rating, comment, reviewer }: FeedbackInput) => {
       try {
         localStorage.setItem(REVIEWER_KEY, reviewer)
       } catch {
@@ -91,15 +83,35 @@ export function FeedbackModal({ target, initialRating, onClose }: { target: Feed
         }),
       )
     },
-    onSuccess: () => {
+    onSuccess: (_, { target }) => {
       qc.invalidateQueries({ queryKey: ['feedbacks'] })
       qc.invalidateQueries({ queryKey: ['executions'] })
       qc.invalidateQueries({ queryKey: ['execution'] })
       qc.invalidateQueries({ queryKey: ['conversations'] })
       qc.invalidateQueries({ queryKey: ['counts'] })
-      onClose()
+      qc.invalidateQueries({ queryKey: ['assistant-rows', target.conversationId] })
+      onSuccess?.()
     },
   })
+}
+
+/** Saves a reviewer rating on an agent reply; it lands in the Feedback queue as pending. */
+export function FeedbackModal({ target, initialRating, onClose }: { target: FeedbackTarget | null; initialRating: Rating; onClose: () => void }) {
+  const [rating, setRating] = useState<Rating>(initialRating)
+  const [comment, setComment] = useState('')
+  const [reviewer, setReviewer] = useState('')
+
+  useEffect(() => {
+    if (!target) return
+    setRating(initialRating)
+    setComment('')
+    setReviewer(readReviewerName())
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [target, initialRating, onClose])
+
+  const save = useSaveFeedback({ onSuccess: onClose })
 
   if (!target) return null
 
@@ -166,7 +178,7 @@ export function FeedbackModal({ target, initialRating, onClose }: { target: Feed
           </button>
           <button
             type="button"
-            onClick={() => save.mutate()}
+            onClick={() => target && save.mutate({ target, rating, comment, reviewer })}
             disabled={save.isPending}
             className="flex h-[36px] items-center rounded-full bg-primary px-[16px] text-[14px] font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >

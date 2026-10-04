@@ -70,11 +70,11 @@ function buildSteps(ex: ExecutionDetailRow): Step[] {
   return steps
 }
 
-export function ProcessPanel({ ex }: { ex: ExecutionDetailRow }) {
+export function ProcessPanel({ ex, className }: { ex: ExecutionDetailRow; className?: string }) {
   const [json, setJson] = useState(false)
   const steps = buildSteps(ex)
   return (
-    <section className="flex h-full w-[500px] shrink-0 flex-col overflow-hidden rounded-[20px] border border-border bg-surface">
+    <section className={cn('flex h-full w-[500px] shrink-0 flex-col overflow-hidden rounded-[20px] border border-border bg-surface', className)}>
       <div className="flex w-full shrink-0 items-center justify-between border-b border-border px-[20px] py-[14px]">
         <div className="flex flex-col gap-[2px]">
           <h2 className="font-display text-[16px] font-medium text-foreground">What the agent did</h2>

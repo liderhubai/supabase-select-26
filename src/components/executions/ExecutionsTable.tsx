@@ -26,7 +26,7 @@ export function ExecutionsTable({ rows }: { rows: ExecutionRow[] }) {
         return (
           <Link
             key={r.id}
-            href={`/app/executions/${r.id}`}
+            href={`/app/chats?c=${r.conversations.id}${r.messages[0] ? `&m=${r.messages[0].id}` : ''}`}
             className={cn(
               'flex h-[54px] w-full shrink-0 items-center gap-[16px] border-b border-border px-[20px] transition-colors hover:bg-surface-raised',
               r.error && 'bg-surface-raised',

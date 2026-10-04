@@ -37,14 +37,3 @@ export function useExecutions(agentId: string | undefined) {
 
 export const feedbackOf = (r: ExecutionRow) =>
   r.feedbacks.some((f) => f.rating === 'negative') ? 'negative' : r.feedbacks.length ? 'positive' : null
-
-export const tabs = [
-  { key: 'all', label: 'All', match: () => true },
-  { key: 'success', label: 'Success', match: (r: ExecutionRow) => !r.error },
-  { key: 'error', label: 'With error', match: (r: ExecutionRow) => !!r.error },
-  { key: 'no-feedback', label: 'No feedback', match: (r: ExecutionRow) => !r.feedbacks.length },
-  { key: 'positive', label: 'Positive', match: (r: ExecutionRow) => r.feedbacks.some((f) => f.rating === 'positive') },
-  { key: 'negative', label: 'Negative', match: (r: ExecutionRow) => r.feedbacks.some((f) => f.rating === 'negative') },
-] as const
-
-export type TabKey = (typeof tabs)[number]['key']

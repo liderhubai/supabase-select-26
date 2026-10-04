@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Toaster } from 'sonner'
 
 const STORAGE_KEY = 'itera.agentId'
 
@@ -38,6 +39,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <AgentSelection.Provider value={{ agentId, setAgentId }}>{children}</AgentSelection.Provider>
+      <Toaster theme="dark" position="bottom-right" richColors />
     </QueryClientProvider>
   )
 }

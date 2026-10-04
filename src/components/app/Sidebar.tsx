@@ -63,30 +63,33 @@ export function Sidebar() {
         <Link href="/" aria-label="itera.ai home">
           <Logo />
         </Link>
-        <Select value={agent?.id ?? ''} onValueChange={setAgentId}>
-          <SelectTrigger
-            aria-label="Select agent"
-            className="h-[40px]! w-full gap-[10px] rounded-[12px] border-border bg-surface! px-[10px] shadow-none hover:bg-surface-raised!"
-          >
-            <span className="flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-[5px] bg-primary text-[11px] font-semibold text-white">
-              {agent?.name.charAt(0).toUpperCase() ?? '·'}
-            </span>
-            <span className="min-w-0 flex-1 truncate text-left text-[14px] font-medium text-foreground">
-              {agent ? `${agent.name}${agent.production ? ` · v${agent.production.version}` : ''}` : 'Loading…'}
-            </span>
-          </SelectTrigger>
-          <SelectContent position="popper" className="rounded-[12px] border-border">
-            {agents.map((a) => (
-              <SelectItem key={a.id} value={a.id} className="rounded-[8px] py-[8px] focus:bg-surface focus:text-foreground">
-                <span className="flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-[5px] bg-primary text-[11px] font-semibold text-white">
-                  {a.name.charAt(0).toUpperCase()}
-                </span>
-                <span className="truncate text-[14px]">{a.name}</span>
-                {a.production && <span className="font-mono text-[11px] text-subtle-foreground">v{a.production.version}</span>}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-[6px]">
+          <span className="px-[2px] font-mono text-[10.5px] tracking-[0.8px] text-subtle-foreground">AGENT</span>
+          <Select value={agent?.id ?? ''} onValueChange={setAgentId}>
+            <SelectTrigger
+              aria-label="Select agent"
+              className="h-[40px]! w-full gap-[10px] rounded-[12px] border-border bg-surface! px-[10px] shadow-none hover:bg-surface-raised!"
+            >
+              <span className="flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-[5px] bg-primary text-[11px] font-semibold text-white">
+                {agent?.name.charAt(0).toUpperCase() ?? '·'}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-left text-[14px] font-medium text-foreground">
+                {agent ? `${agent.name}${agent.production ? ` · v${agent.production.version}` : ''}` : 'Loading…'}
+              </span>
+            </SelectTrigger>
+            <SelectContent position="popper" className="rounded-[12px] border-border">
+              {agents.map((a) => (
+                <SelectItem key={a.id} value={a.id} className="rounded-[8px] py-[8px] focus:bg-surface focus:text-foreground">
+                  <span className="flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-[5px] bg-primary text-[11px] font-semibold text-white">
+                    {a.name.charAt(0).toUpperCase()}
+                  </span>
+                  <span className="truncate text-[14px]">{a.name}</span>
+                  {a.production && <span className="font-mono text-[11px] text-subtle-foreground">v{a.production.version}</span>}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <nav className="flex flex-1 flex-col gap-[2px] px-[12px]">
