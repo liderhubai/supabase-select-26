@@ -58,12 +58,6 @@ function Break() {
 
 const DOTS = Array.from({ length: 50 }, (_, i) => Math.round(255 - (i * (255 - 0x2b)) / 49))
 
-const STATS = [
-  { value: '[X]', label: 'law firms running LíderHub agents' },
-  { value: '[X]%', label: 'of users never return after one bad reply' },
-  { value: '[X] wks', label: 'from a user complaint to a prompt fix' },
-]
-
 export function Problem() {
   return (
     <section id="problem" className="flex w-full flex-col gap-[64px] bg-[#09090b] px-[48px] py-[120px]">
@@ -75,7 +69,7 @@ export function Problem() {
           </h2>
         </div>
         <p className="w-[360px] shrink-0 font-body text-[17px] leading-[1.65] font-normal text-[#a1a1aa]">
-          Running AI agents for [X] law firms at LíderHub, we saw the same pattern again and again:
+          Every team shipping AI agents runs into the same pattern:
         </p>
       </div>
 
