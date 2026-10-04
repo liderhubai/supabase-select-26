@@ -3,10 +3,11 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { Activity, Bot, ChevronsUpDown, FlaskConical, MessagesSquare, ThumbsUp } from 'lucide-react'
+import { Activity, Bot, FlaskConical, MessagesSquare, ThumbsUp } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useCurrentAgent } from '@/lib/queries'
 import { cn } from '@/lib/utils'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Logo } from './Logo'
 
 type CountKey = 'chats' | 'executions' | 'feedback' | 'trainings'
@@ -62,27 +63,30 @@ export function Sidebar() {
         <Link href="/" aria-label="itera.ai home">
           <Logo />
         </Link>
-        <label className="relative flex h-[40px] w-full items-center gap-[10px] rounded-[12px] bg-surface px-[10px] outline outline-1 -outline-offset-[0.5px] outline-border">
-          <span className="flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-[5px] bg-primary text-[11px] font-semibold text-white">
-            {agent?.name.charAt(0).toUpperCase() ?? '·'}
-          </span>
-          <span className="min-w-0 flex-1 truncate text-left text-[14px] font-medium text-foreground">
-            {agent ? `${agent.name}${agent.production ? ` · v${agent.production.version}` : ''}` : 'Loading…'}
-          </span>
-          <ChevronsUpDown size={14} className="shrink-0 text-subtle-foreground" />
-          <select
+        <Select value={agent?.id ?? ''} onValueChange={setAgentId}>
+          <SelectTrigger
             aria-label="Select agent"
-            value={agent?.id ?? ''}
-            onChange={(e) => setAgentId(e.target.value)}
-            className="absolute inset-0 cursor-pointer opacity-0"
+            className="h-[40px]! w-full gap-[10px] rounded-[12px] border-border bg-surface! px-[10px] shadow-none hover:bg-surface-raised!"
           >
+            <span className="flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-[5px] bg-primary text-[11px] font-semibold text-white">
+              {agent?.name.charAt(0).toUpperCase() ?? '·'}
+            </span>
+            <span className="min-w-0 flex-1 truncate text-left text-[14px] font-medium text-foreground">
+              {agent ? `${agent.name}${agent.production ? ` · v${agent.production.version}` : ''}` : 'Loading…'}
+            </span>
+          </SelectTrigger>
+          <SelectContent position="popper" className="rounded-[12px] border-border">
             {agents.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
+              <SelectItem key={a.id} value={a.id} className="rounded-[8px] py-[8px] focus:bg-surface focus:text-foreground">
+                <span className="flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-[5px] bg-primary text-[11px] font-semibold text-white">
+                  {a.name.charAt(0).toUpperCase()}
+                </span>
+                <span className="truncate text-[14px]">{a.name}</span>
+                {a.production && <span className="font-mono text-[11px] text-subtle-foreground">v{a.production.version}</span>}
+              </SelectItem>
             ))}
-          </select>
-        </label>
+          </SelectContent>
+        </Select>
       </div>
 
       <nav className="flex flex-1 flex-col gap-[2px] px-[12px]">
