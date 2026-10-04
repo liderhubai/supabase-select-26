@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { Activity, ChevronsUpDown, FlaskConical, MessagesSquare, ThumbsUp } from 'lucide-react'
+import { Activity, Bot, ChevronsUpDown, FlaskConical, MessagesSquare, ThumbsUp } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useCurrentAgent } from '@/lib/queries'
 import { cn } from '@/lib/utils'
@@ -11,10 +11,11 @@ import { Logo } from './Logo'
 
 type CountKey = 'chats' | 'executions' | 'feedback' | 'trainings'
 
-const nav: { section: string; items: { href: string; label: string; count: CountKey; icon: typeof Activity }[] }[] = [
+const nav: { section: string; items: { href: string; label: string; count?: CountKey; icon: typeof Activity }[] }[] = [
   {
     section: 'AGENT',
     items: [
+      { href: '/app/agents', label: 'Agents', icon: Bot },
       { href: '/app/chats', label: 'Chats', count: 'chats', icon: MessagesSquare },
       { href: '/app/executions', label: 'Executions', count: 'executions', icon: Activity },
     ],
@@ -105,7 +106,7 @@ export function Sidebar() {
                 >
                   <Icon size={16} />
                   <span className="flex-1 text-[14px] font-medium">{label}</span>
-                  <span className="font-mono text-[11px] text-subtle-foreground">{counts?.[count] ?? ''}</span>
+                  <span className="font-mono text-[11px] text-subtle-foreground">{count ? (counts?.[count] ?? '') : ''}</span>
                 </Link>
               )
             })}
