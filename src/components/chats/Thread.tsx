@@ -15,7 +15,7 @@ import { FeedbackModal, type FeedbackTarget, type Rating } from '@/components/ap
 import { Markdown } from '@/components/app/Markdown'
 import type { ConversationRow } from './data'
 
-const gradient = 'bg-[linear-gradient(135deg,#ff6600_14.645%,#7a2e00_85.355%)]'
+export const gradient = 'bg-[linear-gradient(135deg,#ff6600_14.645%,#7a2e00_85.355%)]'
 const time = (iso?: string) => (iso ? new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '')
 
 type AssistantRow = Message & { executions: { latency_ms: number | null } | null; feedbacks: { rating: Rating }[] }
