@@ -9,7 +9,7 @@ export function Insight() {
       {/* Story Row */}
       <div className="flex w-full items-center gap-[80px]">
         <div className="flex min-w-0 flex-1 flex-col gap-[24px]">
-          <LandingEyebrow>THE INSIGHT</LandingEyebrow>
+          <LandingEyebrow>AGENTS WANT TO BE USED</LandingEyebrow>
           <h2 className="font-display text-[56px] leading-[1.05] font-medium tracking-[-1.5px] text-[#fafafa]">
             Everyone is fighting over the 15%.
           </h2>

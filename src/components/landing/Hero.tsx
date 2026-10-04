@@ -26,12 +26,11 @@ export function Hero() {
             Built at Supabase Select Hackathon 2026 · San Francisco
           </span>
         </div>
-        <h1 className="text-center font-display text-[84px] leading-[1.02] font-medium tracking-[-2.5px] text-[#fafafa]">
-          Agents want to be used.
+        <h1 className="w-[960px] text-center font-display text-[84px] leading-[1.02] font-medium tracking-[-2.5px] text-[#fafafa]">
+          Your agent will never make the same mistake again.
         </h1>
         <p className="w-[720px] text-center font-body text-[19px] leading-[1.55] font-normal text-[#a1a1aa]">
-          Most people try an AI agent once, get misunderstood, and never come back. itera.ai turns every bad
-          conversation into a better agent: reviewed by humans, tested automatically, shipped with a diff.
+          Every great hire got feedback. Most agents get abandoned instead.
         </p>
         <div className="flex items-center gap-[12px] pt-[8px]">
           <Link

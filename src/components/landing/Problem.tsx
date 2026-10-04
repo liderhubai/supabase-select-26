@@ -119,28 +119,6 @@ export function Problem() {
           ))}
         </div>
       </div>
-
-      <div className="flex w-full border-t border-[#ffffff1a]">
-        {STATS.map((s, i) => (
-          <div
-            key={s.value}
-            className={cn(
-              'flex min-w-0 flex-1 flex-col gap-[8px] pt-[32px] pr-[32px]',
-              i > 0 && 'border-l border-[#ffffff1a] pl-[32px]',
-            )}
-          >
-            <span className="font-display text-[44px] font-medium text-[#ff6600] leading-[1.2]">{s.value}</span>
-            <span className="font-body text-[14px] leading-[1.5] font-normal text-[#9f9fa9]">{s.label}</span>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex w-full items-center gap-[16px] rounded-[12px] border border-[#ef444433] bg-[#ef44440f] px-[28px] py-[24px]">
-        <CircleAlert className="h-[22px] w-[22px] shrink-0 text-[#ef4444]" />
-        <span className="font-display text-[26px] font-medium text-[#fafafa] leading-[1.2]">
-          The feedback loop is broken, and that is where users are lost.
-        </span>
-      </div>
     </section>
   )
 }
